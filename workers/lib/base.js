@@ -86,9 +86,34 @@ class BaseMiner extends BaseThing {
     return pools
   }
 
-  async setupPools () {
+  /**
+   * Transforms pool config data to the format expected by setPools
+   * @param {Object} config - Pool config object from configsDb
+   * @returns {Array} - Transformed pools array
+   */
+  _transformPoolConfig (config) {
+    if (!config?.poolUrls || !Array.isArray(config.poolUrls)) {
+      throw new Error('ERR_POOL_CONFIG_INVALID')
+    }
+
+    return config.poolUrls.map(p => ({
+      url: p.url,
+      worker_name: p.workerName,
+      worker_password: p.workerPassword || '.'
+    }))
+  }
+
+  async setupPools (params) {
     try {
-      await this.setPools(this.conf.pools, true)
+      let poolsToUse
+
+      if (params?.config) {
+        poolsToUse = this._transformPoolConfig(params.config)
+      } else {
+        poolsToUse = this.conf.pools
+      }
+
+      await this.setPools(poolsToUse, true)
       return { success: true }
     } catch (e) {
       return { success: false, error_msg: e.message }
