@@ -109,6 +109,7 @@ class BaseMiner extends BaseThing {
 
       if (params?.config) {
         poolsToUse = this._transformPoolConfig(params.config)
+        this.poolConfig = params.config.id
       } else {
         poolsToUse = this.conf.pools
       }
