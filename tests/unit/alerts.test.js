@@ -50,6 +50,15 @@ test('isValidPoolConfigSnap with valid snap', (t) => {
   t.ok(alertSpec.valid(ctx, snap), 'Should return true for valid pool config snap')
 })
 
+test('miner alert valid callbacks agree on pool config snap', (t) => {
+  const ctx = createMockContext()
+  const snap = createMockSnap()
+  const md = libAlerts.specs.miner_default
+  t.ok(md.wrong_miner_subaccount.valid(ctx, snap))
+  t.ok(md.wrong_worker_name.valid(ctx, snap))
+  t.ok(md.ip_worker_name.valid(ctx, snap))
+})
+
 test('isValidPoolConfigSnap with invalid snap - no pools', (t) => {
   const ctx = createMockContext({ pools: [] })
   const snap = createMockSnap()
@@ -153,6 +162,31 @@ test('ip_worker_name alert - ID in username', (t) => {
 
   const alertSpec = libAlerts.specs.miner_default.ip_worker_name
   t.not(alertSpec.probe(ctx, snap), 'Should not trigger alert when ID is in username')
+})
+
+test('ip_worker_name alert - IP-based usernames', (t) => {
+  const ctx = createMockContext()
+  const ip = '10.20.30.40'
+  const formatted = ip.replace(/\./g, 'x')
+  const snap = createMockSnap({
+    network_config: { ip_address: ip },
+    pool_config: [
+      { url: 'stratum+tcp://pool1.example.com:4444', username: `worker1.${formatted}` },
+      { url: 'stratum+tcp://pool2.example.com:4444', username: `worker2.${formatted}` }
+    ]
+  })
+
+  const alertSpec = libAlerts.specs.miner_default.ip_worker_name
+  t.ok(alertSpec.probe(ctx, snap), 'Should trigger when usernames use IP pattern')
+})
+
+test('probe returns false when pool_config is empty', (t) => {
+  const ctx = createMockContext()
+  const emptyPoolsSnap = createMockSnap({ pool_config: [] })
+
+  t.not(libAlerts.specs.miner_default.wrong_miner_subaccount.probe(ctx, emptyPoolsSnap))
+  t.not(libAlerts.specs.miner_default.wrong_worker_name.probe(ctx, emptyPoolsSnap))
+  t.not(libAlerts.specs.miner_default.ip_worker_name.probe(ctx, emptyPoolsSnap))
 })
 
 test('alert specs have required properties', (t) => {

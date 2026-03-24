@@ -345,6 +345,19 @@ test('_calcNewShares with decreasing shares', (t) => {
   t.is(JSON.stringify(miner.cachedShares), JSON.stringify({ accepted: 15, rejected: 3, stale: 1 }), 'Should update cached shares')
 })
 
+test('optional stats hooks are no-ops', (t) => {
+  const miner = new BaseMiner()
+  const stats = {}
+  miner._getStatus([], stats)
+  miner._isSuspended(stats)
+  miner._calcPowerW(stats)
+  miner._calcAvgTemp(stats)
+  miner._getPowerMode(stats)
+  miner._calcEfficiency(stats, {})
+  miner._calcHashrates(stats)
+  t.pass('no-op hooks should not throw')
+})
+
 test('abstract methods throw errors', async (t) => {
   const miner = new BaseMiner()
 

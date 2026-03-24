@@ -2,7 +2,7 @@
 
 const test = require('brittle')
 const libStats = require('../../workers/lib/stats')
-const { STATUS } = require('../../workers/lib/constants')
+const { STATUS, MAINTENANCE } = require('../../workers/lib/constants')
 const { hasErrorAndPositiveHashrate } = require('../../workers/lib/utils')
 
 const testEntries = [
@@ -72,6 +72,27 @@ test('Filters: power_mode_sleep_type_cnt', createFilterTest('power_mode_sleep_ty
 test('Filters: power_mode_low_type_cnt', createFilterTest('power_mode_low_type_cnt', 0))
 test('Filters: power_mode_normal_type_cnt', createFilterTest('power_mode_normal_type_cnt', 0))
 test('Filters: power_mode_high_type_cnt', createFilterTest('power_mode_high_type_cnt', 1))
+
+test('Filters: hashrate_mhs_1m_type_group_sum excludes maintenance container', (t) => {
+  const filter = libStats.specs.miner_default.ops.hashrate_mhs_1m_type_group_sum.filter
+  const nonMaint = testEntries.find(e => e.info.container !== MAINTENANCE)
+  const maint = testEntries.find(e => e.info.container === MAINTENANCE)
+  t.ok(filter(nonMaint), 'non-maintenance entry should pass filter')
+  t.absent(filter(maint), 'maintenance entry should not pass filter')
+})
+
+test('Filters: hashrate_mhs_5m_cnt_active', createFilterTest('hashrate_mhs_5m_cnt_active', 1))
+
+test('Filters: not_mining_cnt and not_mining_type_cnt', (t) => {
+  const entry = {
+    last: { snap: { stats: { status: STATUS.NOT_MINING, hashrate_mhs: { t_5m: 0 } }, config: { power_mode: 'low' } } },
+    info: { container: 'group1', type: 'typeX' }
+  }
+  const notMiningCnt = libStats.specs.miner_default.ops.not_mining_cnt.filter
+  const notMiningTypeCnt = libStats.specs.miner_default.ops.not_mining_type_cnt.filter
+  t.ok(notMiningCnt(entry), 'not_mining_cnt filter should match NOT_MINING entry')
+  t.ok(notMiningTypeCnt(entry), 'not_mining_type_cnt filter should match NOT_MINING entry')
+})
 
 test('Filters: offline_type_cnt with maintenance', (t) => {
   // add maintenance entry
