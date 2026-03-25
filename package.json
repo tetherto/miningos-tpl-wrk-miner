@@ -1,6 +1,6 @@
 {
-  "name": "miningos-tpl-wrk-miner",
-  "version": "0.0.1",
+  "name": "@tetherto/miningos-tpl-wrk-miner",
+  "version": "1.0.0",
   "description": "MiningOS Template Worker Miner",
   "keywords": [
     "tether"
@@ -11,9 +11,19 @@
     "type": "git",
     "url": "git+https://github.com/tetherto/miningos-tpl-wrk-miner.git"
   },
-  "engine": {
-    "node": ">=20.0"
+  "homepage": "https://github.com/tetherto/miningos-tpl-wrk-miner#readme",
+  "bugs": {
+    "url": "https://github.com/tetherto/miningos-tpl-wrk-miner/issues"
+  },  
+  "main": "worker.js",
+  "engines": {
+    "node": ">=20"
   },
+  "files": [
+    "worker.js",
+    "workers/"
+  ],
+  "type": "commonjs",  
   "scripts": {
     "lint": "standard",
     "lint:fix": "standard --fix",
@@ -33,7 +43,6 @@
   "devDependencies": {
     "@bitfinex/lib-js-util-promise": "git+https://github.com/bitfinexcom/lib-js-util-promise.git",
     "brittle": "3.16.3",
-    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "standard": "17.1.2"
   }
 }
