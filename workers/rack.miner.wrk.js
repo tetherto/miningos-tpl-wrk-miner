@@ -39,13 +39,21 @@ class WrkMinerRack extends WrkRack {
     return getRandomString(15)
   }
 
-  async syncPoolConfig () {
-    for (const thg of Object.values(this.mem.things)) {
-      if (thg.ctrl?.poolConfig && thg.info.poolConfig !== thg.ctrl.poolConfig) {
-        thg.info.poolConfig = thg.ctrl.poolConfig
+  async _queryThingHook (req, res) {
+    if (req.method === 'setupPools' && res?.success) {
+      const thg = this.mem.things[req.id]
+      const configId = thg.ctrl.poolConfig
+      if (thg && configId && thg.info.poolConfig !== configId) {
+        thg.info.poolConfig = configId
         await this.saveThingData(thg)
       }
     }
+  }
+
+  async queryThing (req) {
+    const res = await super.queryThing(req)
+    await this._queryThingHook(req)
+    return res
   }
 
   _start (cb) {
@@ -61,12 +69,6 @@ class WrkMinerRack extends WrkRack {
           ['updateThing', 1],
           ['forgetThings', 1]
         ])
-
-        this.interval_0.add(
-          'syncPoolConfig',
-          this.syncPoolConfig.bind(this),
-          5000
-        )
 
         next()
       }
