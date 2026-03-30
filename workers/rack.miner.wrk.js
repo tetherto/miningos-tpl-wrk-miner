@@ -50,12 +50,6 @@ class WrkMinerRack extends WrkRack {
     }
   }
 
-  async queryThing (req) {
-    const res = await super.queryThing(req)
-    await this._queryThingHook(req)
-    return res
-  }
-
   _start (cb) {
     async.series([
       (next) => { super._start(next) },
