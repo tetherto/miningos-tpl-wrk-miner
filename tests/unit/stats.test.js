@@ -3,7 +3,7 @@
 const test = require('brittle')
 const libStats = require('../../workers/lib/stats')
 const { STATUS, MAINTENANCE } = require('../../workers/lib/constants')
-const { hasErrorAndPositiveHashrate } = require('../../workers/lib/utils')
+const { hasErrorAndPositiveHashrate, getRackFromPos, groupByContainerRack } = require('../../workers/lib/utils')
 
 const testEntries = [
   { last: { snap: { stats: { status: STATUS.OFFLINE, hashrate_mhs: { t_5m: 0 } }, config: { power_mode: 'low' } } }, info: { container: 'group1', type: 'typeA' } },
@@ -101,4 +101,46 @@ test('Filters: offline_type_cnt with maintenance', (t) => {
 
   const offlineGroup = filterEntriesByOperation(testEntriesWithMaintenance, 'offline_type_cnt')
   t.is(offlineGroup.length, 1, 'Offline count should be 1')
+})
+
+// Rack helper function tests
+test('getRackFromPos extracts rack from position string', (t) => {
+  t.is(getRackFromPos('1-1_1'), '1-1', 'Should extract rack from "1-1_1"')
+  t.is(getRackFromPos('1-2_3'), '1-2', 'Should extract rack from "1-2_3"')
+  t.is(getRackFromPos('2-5_10'), '2-5', 'Should extract rack from "2-5_10"')
+  t.is(getRackFromPos('rack1_socket5'), 'rack1', 'Should extract rack from "rack1_socket5"')
+  t.is(getRackFromPos(null), null, 'Should return null for null input')
+  t.is(getRackFromPos(undefined), null, 'Should return null for undefined input')
+  t.is(getRackFromPos(''), null, 'Should return null for empty string')
+  t.is(getRackFromPos('no-underscore'), 'no-underscore', 'Should return full string if no underscore')
+})
+
+test('groupByContainerRack returns container-rack key', (t) => {
+  const ext1 = { info: { container: 'group-1', pos: '1-1_1' } }
+  const ext2 = { info: { container: 'group-2', pos: '2-3_5' } }
+  const ext3 = { info: { container: 'group-1', pos: '1-2_2' } }
+  const extNoPos = { info: { container: 'group-1' } }
+  const extNoContainer = { info: { pos: '1-1_1' } }
+
+  t.is(groupByContainerRack({}, ext1), 'group-1_1-1', 'Should return "group-1-1-1" for container "group-1" and pos "1-1_1"')
+  t.is(groupByContainerRack({}, ext2), 'group-2_2-3', 'Should return "group-2-2-3" for container "group-2" and pos "2-3_5"')
+  t.is(groupByContainerRack({}, ext3), 'group-1_1-2', 'Should return "group-1-1-2" for container "group-1" and pos "1-2_2"')
+  t.is(groupByContainerRack({}, extNoPos), null, 'Should return null when pos is missing')
+  t.is(groupByContainerRack({}, extNoContainer), null, 'Should return null when container is missing')
+  t.is(groupByContainerRack({}, null), null, 'Should return null when ext is null')
+})
+
+// Rack stats operations tests
+test('Rack stats operations are defined', (t) => {
+  const ops = libStats.specs.miner_default.ops
+
+  t.ok(ops.hashrate_mhs_5m_rack_group_sum, 'hashrate_mhs_5m_rack_group_sum should be defined')
+  t.ok(ops.hashrate_mhs_5m_rack_group_avg, 'hashrate_mhs_5m_rack_group_avg should be defined')
+  t.ok(ops.efficiency_w_ths_rack_group_avg, 'efficiency_w_ths_rack_group_avg should be defined')
+  t.ok(ops.power_w_rack_group_sum, 'power_w_rack_group_sum should be defined')
+  t.ok(ops.temperature_c_rack_group_avg, 'temperature_c_rack_group_avg should be defined')
+  t.ok(ops.temperature_c_rack_group_max, 'temperature_c_rack_group_max should be defined')
+  t.ok(ops.hashrate_mhs_5m_active_rack_group_cnt, 'hashrate_mhs_5m_active_rack_group_cnt should be defined')
+  t.ok(ops.offline_rack_cnt, 'offline_rack_cnt should be defined')
+  t.ok(ops.error_rack_cnt, 'error_rack_cnt should be defined')
 })

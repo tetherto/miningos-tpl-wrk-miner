@@ -45,5 +45,6 @@ module.exports = {
   getRandomString,
   hasErrorAndPositiveHashrate,
   sumPoolsShares,
-  groupByContainerRack
+  groupByContainerRack,
+  getRackFromPos
 }
