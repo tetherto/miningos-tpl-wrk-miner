@@ -2,7 +2,7 @@
 
 const libStats = require('miningos-tpl-wrk-thing/workers/lib/stats')
 const { groupBy } = require('miningos-lib-stats/utils')
-const { hasErrorAndPositiveHashrate } = require('./utils')
+const { hasErrorAndPositiveHashrate, groupByContainerRack } = require('./utils')
 const { STATUS, POWER_MODE, MAINTENANCE } = require('./constants')
 
 libStats.conf.skipTagPrefixes = ['pos-', 'id-', 'code-', 'site-']
@@ -348,6 +348,27 @@ libStats.specs.miner_default = {
       op: 'group_cnt',
       group: groupBy('info.container'),
       filter: (entry) => entry?.last?.snap?.stats?.hashrate_mhs?.t_5m
+    },
+    // Rack-level stats (grouped by container-rack)
+    hashrate_mhs_5m_rack_group_sum: {
+      op: 'group_sum',
+      src: 'last.snap.stats.hashrate_mhs.t_5m',
+      group: groupByContainerRack
+    },
+    hashrate_mhs_5m_rack_group_avg: {
+      op: 'group_avg',
+      src: 'last.snap.stats.hashrate_mhs.t_5m',
+      group: groupByContainerRack
+    },
+    efficiency_w_ths_rack_group_avg: {
+      op: 'group_avg',
+      src: 'last.snap.stats.efficiency_w_ths',
+      group: groupByContainerRack
+    },
+    power_w_rack_group_sum: {
+      op: 'group_sum',
+      src: 'last.snap.stats.power_w',
+      group: groupByContainerRack
     },
     nominal_hashrate_mhs_avg: {
       op: 'avg',

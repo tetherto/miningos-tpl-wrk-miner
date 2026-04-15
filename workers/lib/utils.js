@@ -2,6 +2,21 @@
 
 const libUtils = require('miningos-tpl-wrk-thing/workers/lib/utils')
 const crypto = require('crypto')
+const { getVal } = require('miningos-lib-stats/utils')
+
+function getRackFromPos (pos) {
+  if (!pos) return null
+  const parts = pos.split('_')
+  return parts[0] || null
+}
+
+function groupByContainerRack (entry) {
+  const container = getVal(entry, 'info.container')
+  const pos = getVal(entry, 'info.pos')
+  const rack = getRackFromPos(pos)
+  if (!container || !rack) return null
+  return `${container}-${rack}`
+}
 
 function getRandomString (length) {
   return crypto.randomBytes(length)
@@ -29,5 +44,6 @@ module.exports = {
   ...libUtils,
   getRandomString,
   hasErrorAndPositiveHashrate,
-  sumPoolsShares
+  sumPoolsShares,
+  groupByContainerRack
 }
