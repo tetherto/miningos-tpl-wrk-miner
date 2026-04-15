@@ -15,7 +15,7 @@ function groupByContainerRack (entry) {
   const pos = getVal(entry, 'info.pos')
   const rack = getRackFromPos(pos)
   if (!container || !rack) return null
-  return `${container}-${rack}`
+  return `${container}_${rack}`
 }
 
 function getRandomString (length) {
