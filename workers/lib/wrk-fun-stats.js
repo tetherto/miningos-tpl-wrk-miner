@@ -1,7 +1,7 @@
 'use strict'
 
-const utilsStore = require('hp-svc-facs-store/utils')
-const lWrkFunLogs = require('miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
+const lWrkFunLogs = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
 
 async function saveStats (logKey, dataKey, data) {
   const log = await lWrkFunLogs.getBeeTimeLog.call(this, logKey, 0, true)

@@ -1,7 +1,7 @@
 'use strict'
 
 const async = require('async')
-const WrkRack = require('miningos-tpl-wrk-thing/workers/rack.thing.wrk')
+const WrkRack = require('@tetherto/miningos-tpl-wrk-thing/workers/rack.thing.wrk')
 const { getRandomString } = require('./lib/utils')
 const gLibUtilBase = require('lib-js-util-base')
 const {
@@ -14,7 +14,7 @@ const {
   STAT_5M
 } = require('./lib/constants')
 const { saveStats } = require('./lib/wrk-fun-stats')
-const lWrkFunLogs = require('miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
+const lWrkFunLogs = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
 const { getArrayUniq } = require('lib-js-util-base')
 
 class WrkMinerRack extends WrkRack {

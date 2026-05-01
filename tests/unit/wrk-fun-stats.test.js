@@ -3,8 +3,8 @@
 const test = require('brittle')
 const path = require('path')
 
-const utilsPath = require.resolve('hp-svc-facs-store/utils')
-const logsPath = require.resolve('miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
+const utilsPath = require.resolve('@tetherto/hp-svc-facs-store/utils')
+const logsPath = require.resolve('@tetherto/miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
 const wrkFunStatsPath = require.resolve('../../workers/lib/wrk-fun-stats')
 
 function cacheModule (resolvedPath, exports) {
