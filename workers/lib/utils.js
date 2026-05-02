@@ -1,8 +1,8 @@
 'use strict'
 
-const libUtils = require('miningos-tpl-wrk-thing/workers/lib/utils')
+const libUtils = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/utils')
 const crypto = require('crypto')
-const { getVal } = require('miningos-lib-stats/utils')
+const { getVal } = require('@tetherto/miningos-lib-stats/utils')
 
 function getRackFromPos (pos) {
   if (!pos) return null

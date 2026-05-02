@@ -1,6 +1,6 @@
 'use strict'
 
-const BaseThing = require('miningos-tpl-wrk-thing/workers/lib/base')
+const BaseThing = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/base')
 const { sumPoolsShares } = require('./utils')
 
 class BaseMiner extends BaseThing {
