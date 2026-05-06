@@ -22,7 +22,7 @@ class WrkMinerRack extends WrkRack {
     super.init()
 
     this.setInitFacs([
-      ['fac', 'svc-facs-miningos-net', 'n0', 'n0', () => {
+      ['fac', '@tetherto/svc-facs-miningos-net', 'n0', 'n0', () => {
         return {
           fac_net: this.net_r0
         }
