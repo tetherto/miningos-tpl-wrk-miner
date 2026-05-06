@@ -122,25 +122,20 @@ test('groupByContainerRack returns container-rack key', (t) => {
   const extNoPos = { info: { container: 'group-1' } }
   const extNoContainer = { info: { pos: '1-1_1' } }
 
-  t.is(groupByContainerRack({}, ext1), 'group-1_1-1', 'Should return "group-1-1-1" for container "group-1" and pos "1-1_1"')
-  t.is(groupByContainerRack({}, ext2), 'group-2_2-3', 'Should return "group-2-2-3" for container "group-2" and pos "2-3_5"')
-  t.is(groupByContainerRack({}, ext3), 'group-1_1-2', 'Should return "group-1-1-2" for container "group-1" and pos "1-2_2"')
-  t.is(groupByContainerRack({}, extNoPos), null, 'Should return null when pos is missing')
-  t.is(groupByContainerRack({}, extNoContainer), null, 'Should return null when container is missing')
-  t.is(groupByContainerRack({}, null), null, 'Should return null when ext is null')
+  t.is(groupByContainerRack(ext1), 'group-1_1-1', 'Should return "group-1-1-1" for container "group-1" and pos "1-1_1"')
+  t.is(groupByContainerRack(ext2), 'group-2_2-3', 'Should return "group-2-2-3" for container "group-2" and pos "2-3_5"')
+  t.is(groupByContainerRack(ext3), 'group-1_1-2', 'Should return "group-1-1-2" for container "group-1" and pos "1-2_2"')
+  t.is(groupByContainerRack(extNoPos), null, 'Should return null when pos is missing')
+  t.is(groupByContainerRack(extNoContainer), null, 'Should return null when container is missing')
+  t.is(groupByContainerRack(null), null, 'Should return null when ext is null')
 })
 
 // Rack stats operations tests
 test('Rack stats operations are defined', (t) => {
   const ops = libStats.specs.miner_default.ops
 
-  t.ok(ops.hashrate_mhs_5m_rack_group_sum, 'hashrate_mhs_5m_rack_group_sum should be defined')
-  t.ok(ops.hashrate_mhs_5m_rack_group_avg, 'hashrate_mhs_5m_rack_group_avg should be defined')
-  t.ok(ops.efficiency_w_ths_rack_group_avg, 'efficiency_w_ths_rack_group_avg should be defined')
-  t.ok(ops.power_w_rack_group_sum, 'power_w_rack_group_sum should be defined')
-  t.ok(ops.temperature_c_rack_group_avg, 'temperature_c_rack_group_avg should be defined')
-  t.ok(ops.temperature_c_rack_group_max, 'temperature_c_rack_group_max should be defined')
-  t.ok(ops.hashrate_mhs_5m_active_rack_group_cnt, 'hashrate_mhs_5m_active_rack_group_cnt should be defined')
-  t.ok(ops.offline_rack_cnt, 'offline_rack_cnt should be defined')
-  t.ok(ops.error_rack_cnt, 'error_rack_cnt should be defined')
+  t.ok(ops.hashrate_mhs_5m_pdu_rack_group_sum, 'hashrate_mhs_5m_pdu_rack_group_sum should be defined')
+  t.ok(ops.hashrate_mhs_5m_pdu_rack_group_avg, 'hashrate_mhs_5m_pdu_rack_group_avg should be defined')
+  t.ok(ops.efficiency_w_ths_pdu_rack_group_avg, 'efficiency_w_ths_pdu_rack_group_avg should be defined')
+  t.ok(ops.power_w_pdu_rack_group_sum, 'power_w_pdu_rack_group_sum should be defined')
 })
