@@ -3,7 +3,7 @@
 const async = require('async')
 const WrkRack = require('@tetherto/miningos-tpl-wrk-thing/workers/rack.thing.wrk')
 const { getRandomString } = require('./lib/utils')
-const gLibUtilBase = require('lib-js-util-base')
+const gLibUtilBase = require('@bitinex/lib-js-util-base')
 const {
   MAINTENANCE,
   MINER_TAG,
@@ -15,7 +15,7 @@ const {
 } = require('./lib/constants')
 const { saveStats } = require('./lib/wrk-fun-stats')
 const lWrkFunLogs = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
-const { getArrayUniq } = require('lib-js-util-base')
+const { getArrayUniq } = require('@bitinex/lib-js-util-base')
 
 class WrkMinerRack extends WrkRack {
   init () {
