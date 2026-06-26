@@ -163,7 +163,7 @@ class WrkMinerRack extends WrkRack {
         this._setStaticIpThing(thg, forceSetIp)
         return
       }
-      await this.minigosNet_n0.setIpThing(thg, forceSetIp)
+      await this.miningosNet_n0.setIpThing(thg, forceSetIp)
     } catch (e) {
       this.debugThingError(thg, e)
       throw e
