@@ -176,7 +176,7 @@ class WrkMinerRack extends WrkRack {
       return
     }
     try {
-      await this.minigosNet_n0.releaseIpThing(thg)
+      await this.miningosNet_n0.releaseIpThing(thg)
     } catch (e) {
       this.debugThingError(thg, e)
       if (gLibUtilBase.getErrorMessage(e) !== 'ERR_IP_NOT_FOUND') {
@@ -254,7 +254,7 @@ class WrkMinerRack extends WrkRack {
   }
 
   async disconnectThing (thg) {
-    await this.minigosNet_n0.disconnectThing(thg)
+    await this.miningosNet_n0.disconnectThing(thg)
   }
 
   async collectSnapsHook0 () {
