@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/miningos-tpl-wrk-miner",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MiningOS Template Worker Miner",
   "keywords": [
     "tether"
@@ -17,7 +17,7 @@
   },
   "main": "worker.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "files": [
     "worker.js",
