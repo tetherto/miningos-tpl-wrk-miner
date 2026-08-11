@@ -351,6 +351,11 @@ test('_isMinerOutsideContainerLocation returns false for container site location
   t.is(ctx._isMinerOutsideContainerLocation({ info: { location: 'site1.container' } }), false)
 })
 
+test('_isMinerOutsideContainerLocation returns false for miner.room installed location', (t) => {
+  const ctx = makeWrkCtx()
+  t.is(ctx._isMinerOutsideContainerLocation({ info: { location: 'miner.room' } }), false)
+})
+
 test('_isMinerOutsideContainerLocation returns false when no location', (t) => {
   const ctx = makeWrkCtx()
   t.is(ctx._isMinerOutsideContainerLocation({ info: {} }), false)
