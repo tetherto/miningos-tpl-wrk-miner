@@ -1,6 +1,7 @@
 'use strict'
 
 const MAINTENANCE = 'maintenance'
+const MINER_ROOM = 'miner.room'
 
 const STATUS = {
   OFFLINE: 'offline',
@@ -30,6 +31,7 @@ const FIRMWARE_RPC = ['listFirmwares', 'registerFirmware']
 
 module.exports = {
   MAINTENANCE,
+  MINER_ROOM,
   POWER_MODE,
   STATUS,
   DEFAULT_THRESHOLD_HASHRATE,

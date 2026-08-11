@@ -8,6 +8,7 @@ const { getRandomString } = require('./lib/utils')
 const gLibUtilBase = require('@bitfinex/lib-js-util-base')
 const {
   MAINTENANCE,
+  MINER_ROOM,
   MINER_TAG,
   STAT_30M,
   STAT_SHARES_1M,
@@ -208,6 +209,7 @@ class WrkMinerRack extends WrkRack {
 
   _isMinerOutsideContainerLocation (thg) {
     if (thg.info.location && typeof thg.info.location === 'string') {
+      if (thg.info.location === MINER_ROOM) return false
       const [, siteLocation] = thg.info.location.split('.')
       if (siteLocation !== 'container') return true
     }
