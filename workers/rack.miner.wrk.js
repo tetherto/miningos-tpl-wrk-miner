@@ -242,8 +242,6 @@ class WrkMinerRack extends WrkRack {
     // set ip if thing not in maintenance
     if (!thg.opts.address && thg.info.container !== MAINTENANCE && !this._isMinerOutsideContainerLocation(thg)) {
       await this.setIpThing(thg, !!thg.opts.forceSetIp)
-    } else if (thg.info.container === MAINTENANCE || this._isMinerOutsideContainerLocation(thg)) {
-      thg.info.subnet = null
     }
   }
 
