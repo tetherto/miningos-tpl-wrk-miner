@@ -2,5 +2,9 @@
   "_idFile": "",
   "collectSnapsItvMs": 60000,
   "logRotateMaxLength": 10000,
-  "logKeepCount": 3
+  "logKeepCount": 3,
+  "containerSubnets": {
+    "group-1": "10.182.0.0/24",
+    "group-2": "10.10.0.0/24"
+  }
 }
