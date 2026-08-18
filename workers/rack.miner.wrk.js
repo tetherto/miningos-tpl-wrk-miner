@@ -207,8 +207,8 @@ class WrkMinerRack extends WrkRack {
     }
   }
 
-  _setSubnetByContainer (thg) {
-    const subnet = this.conf.thing.containerSubnets?.[thg.info?.container]
+  _setUpSubnetBasedOnContainer (thg) {
+    const subnet = this.conf.thing.containerSubnets?.[thg.info.container]
     if (subnet) {
       thg.info.subnet = subnet
     }
@@ -226,7 +226,7 @@ class WrkMinerRack extends WrkRack {
   async registerThingHook0 (thg) {
     if (this._isMinerOutsideContainerLocation(thg)) return
     this._setUpPortBasedOnMinerType(thg)
-    this._setSubnetByContainer(thg)
+    this._setUpSubnetBasedOnContainer(thg)
 
     if (!thg.opts.address && thg.info.container !== MAINTENANCE) {
       await this.setIpThing(thg, !!thg.opts.forceSetIp)
@@ -236,15 +236,16 @@ class WrkMinerRack extends WrkRack {
   async updateThingHook0 (thg, thgPrev) {
     super.updateThingHook0(thg, thgPrev)
     this._setUpPortBasedOnMinerType(thg)
-    this._setSubnetByContainer(thg)
+    this._setUpSubnetBasedOnContainer(thg)
 
     const isNewPos = thgPrev.info.pos !== thg.info.pos
     const isNewContainer = thgPrev.info.container !== thg.info.container
+    const isNewSubnet = thgPrev.info.subnet !== thg.info.subnet
     const isMinerPosChanged = isNewPos || isNewContainer
-    // release current ip, if isStaticIpAssignment and minerPosChanged and not forceSetIp or container changed
+    // release current ip, if isStaticIpAssignment and minerPosChanged and not forceSetIp or container/subnet changed
     if (
       (this.conf.thing.isStaticIpAssignment && isMinerPosChanged && !thg.opts.forceSetIp) ||
-      (isNewContainer && thgPrev.opts.address)
+      ((isNewContainer || isNewSubnet) && thgPrev.opts.address)
     ) {
       await this.releaseIpThing(thgPrev)
       thg.opts.address = null

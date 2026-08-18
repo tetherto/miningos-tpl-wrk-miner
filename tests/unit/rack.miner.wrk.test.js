@@ -211,7 +211,7 @@ function makeWrkCtx ({ things = {}, conf = {}, dirFirmwares = '/nonexistent' } =
   ctx.getMinerDefaultPort = proto.getMinerDefaultPort.bind(ctx)
   ctx.getNominalEficiencyWThs = proto.getNominalEficiencyWThs.bind(ctx)
   ctx._setUpPortBasedOnMinerType = proto._setUpPortBasedOnMinerType.bind(ctx)
-  ctx._setSubnetByContainer = proto._setSubnetByContainer.bind(ctx)
+  ctx._setUpSubnetBasedOnContainer = proto._setUpSubnetBasedOnContainer.bind(ctx)
   ctx._isMinerOutsideContainerLocation = proto._isMinerOutsideContainerLocation.bind(ctx)
   ctx._validateMinerDataChange = proto._validateMinerDataChange.bind(ctx)
   ctx._validateUpdateThing = proto._validateUpdateThing.bind(ctx)
@@ -339,27 +339,27 @@ test('_setUpPortBasedOnMinerType does not set port for maintenance container', (
 })
 
 // ---------------------------------------------------------------------------
-// _setSubnetByContainer
+// _setUpSubnetBasedOnContainer
 // ---------------------------------------------------------------------------
 
-test('_setSubnetByContainer sets subnet from container mapping', (t) => {
+test('_setUpSubnetBasedOnContainer sets subnet from container mapping', (t) => {
   const ctx = makeWrkCtx({ conf: { containerSubnets: { 'group-1': '10.182.0.0/24', 'group-2': '10.10.0.0/24' } } })
   const thg = { opts: {}, info: { container: 'group-2', subnet: '10.182.0.0/24' } }
-  ctx._setSubnetByContainer(thg)
+  ctx._setUpSubnetBasedOnContainer(thg)
   t.is(thg.info.subnet, '10.10.0.0/24')
 })
 
-test('_setSubnetByContainer keeps existing subnet when container is not mapped', (t) => {
+test('_setUpSubnetBasedOnContainer keeps existing subnet when container is not mapped', (t) => {
   const ctx = makeWrkCtx({ conf: { containerSubnets: { 'group-1': '10.182.0.0/24' } } })
   const thg = { opts: {}, info: { container: 'group-3', subnet: '10.10.0.0/24' } }
-  ctx._setSubnetByContainer(thg)
+  ctx._setUpSubnetBasedOnContainer(thg)
   t.is(thg.info.subnet, '10.10.0.0/24')
 })
 
-test('_setSubnetByContainer is a no-op when no mapping is configured', (t) => {
+test('_setUpSubnetBasedOnContainer is a no-op when no mapping is configured', (t) => {
   const ctx = makeWrkCtx()
   const thg = { opts: {}, info: { container: 'group-1', subnet: '10.10.0.0/24' } }
-  ctx._setSubnetByContainer(thg)
+  ctx._setUpSubnetBasedOnContainer(thg)
   t.is(thg.info.subnet, '10.10.0.0/24')
 })
 
@@ -375,6 +375,20 @@ test('updateThingHook0 applies mapped subnet before reassigning ip on container 
 
   t.is(thg.info.subnet, '10.10.0.0/24')
   t.alike(calls, [['release', '10.182.0.5'], ['set', '10.10.0.0/24']])
+})
+
+test('updateThingHook0 reassigns ip when mapped subnet changes without container change', async (t) => {
+  const ctx = makeWrkCtx({ conf: { containerSubnets: { 'group-1': '10.20.0.0/24' } } })
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg) => { calls.push(['set', thg.info.subnet]) }
+
+  const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.is(thg.info.subnet, '10.20.0.0/24')
+  t.alike(calls, [['release', '10.182.0.5'], ['set', '10.20.0.0/24']])
 })
 
 // ---------------------------------------------------------------------------
