@@ -207,6 +207,13 @@ class WrkMinerRack extends WrkRack {
     }
   }
 
+  _setSubnetByContainer (thg) {
+    const subnet = this.conf.thing.containerSubnets?.[thg.info?.container]
+    if (subnet) {
+      thg.info.subnet = subnet
+    }
+  }
+
   _isMinerOutsideContainerLocation (thg) {
     if (thg.info.location && typeof thg.info.location === 'string') {
       if (thg.info.location === MINER_ROOM) return false
@@ -219,6 +226,7 @@ class WrkMinerRack extends WrkRack {
   async registerThingHook0 (thg) {
     if (this._isMinerOutsideContainerLocation(thg)) return
     this._setUpPortBasedOnMinerType(thg)
+    this._setSubnetByContainer(thg)
 
     if (!thg.opts.address && thg.info.container !== MAINTENANCE) {
       await this.setIpThing(thg, !!thg.opts.forceSetIp)
@@ -228,6 +236,7 @@ class WrkMinerRack extends WrkRack {
   async updateThingHook0 (thg, thgPrev) {
     super.updateThingHook0(thg, thgPrev)
     this._setUpPortBasedOnMinerType(thg)
+    this._setSubnetByContainer(thg)
 
     const isNewPos = thgPrev.info.pos !== thg.info.pos
     const isNewContainer = thgPrev.info.container !== thg.info.container
