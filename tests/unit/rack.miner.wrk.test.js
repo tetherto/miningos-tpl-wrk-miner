@@ -395,7 +395,10 @@ test('updateThingHook0 keeps the old address when the forced set fails on a move
   const ctx = makeWrkCtx()
   const calls = []
   ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
-  ctx.setIpThing = async () => { throw new Error('ERR_IP_ALLOCATION_FAILED') }
+  ctx.setIpThing = async (thg, forceSetIp) => {
+    calls.push(['set', thg.info.subnet, forceSetIp])
+    throw new Error('ERR_IP_ALLOCATION_FAILED')
+  }
 
   const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
   const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-2', pos: '1-1_1', subnet: '10.10.0.0/24' } }
@@ -404,8 +407,22 @@ test('updateThingHook0 keeps the old address when the forced set fails on a move
     () => WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev),
     { message: 'ERR_IP_ALLOCATION_FAILED' }
   )
-  t.alike(calls, [], 'old lease is never released when the move fails')
+  t.alike(calls, [['set', '10.10.0.0/24', true]], 'the failing call is the forced set, with no release before it')
+  t.is(thg.opts.address, '10.182.0.5', 'address is only replaced on success')
   t.is(thgPrev.opts.address, '10.182.0.5', 'previous thing state is untouched')
+})
+
+test('updateThingHook0 forces the set on a container change even without a stored address', async (t) => {
+  const ctx = makeWrkCtx()
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
+
+  const thgPrev = { opts: {}, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: {}, info: { container: 'group-2', pos: '1-1_1', subnet: '10.10.0.0/24' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.alike(calls, [['set', '10.10.0.0/24', true]], 'stale leases in the old subnet are cleaned by the forced set')
 })
 
 test('updateThingHook0 releases the ip without setting a new one on a move to maintenance', async (t) => {
