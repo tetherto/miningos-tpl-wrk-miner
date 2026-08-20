@@ -29,7 +29,9 @@ const STAT_5M = 'stat-5m'
 
 const FIRMWARE_RPC = ['listFirmwares', 'registerFirmware']
 
-const MAC_ADDRESS_RX = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/
+const MAC_ADDRESS_RX = /^[0-9A-Fa-f]{2}([:-])(?:[0-9A-Fa-f]{2}\1){4}[0-9A-Fa-f]{2}$/
+
+const MAC_MULTICAST_BIT = 0x01
 
 module.exports = {
   MAINTENANCE,
@@ -44,5 +46,6 @@ module.exports = {
   STAT_STARTUP_STATUS,
   STAT_5M,
   FIRMWARE_RPC,
-  MAC_ADDRESS_RX
+  MAC_ADDRESS_RX,
+  MAC_MULTICAST_BIT
 }
