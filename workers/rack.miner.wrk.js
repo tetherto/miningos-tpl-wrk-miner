@@ -15,7 +15,8 @@ const {
   STAT_SHARES_30M,
   STAT_STARTUP_STATUS,
   STAT_5M,
-  FIRMWARE_RPC
+  FIRMWARE_RPC,
+  MAC_ADDRESS_RX
 } = require('./lib/constants')
 const { saveStats } = require('./lib/wrk-fun-stats')
 const lWrkFunLogs = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
@@ -88,7 +89,19 @@ class WrkMinerRack extends WrkRack {
     return 'miner'
   }
 
+  _validateMacAddress (data) {
+    const mac = data.info?.macAddress
+    if (mac === undefined || mac === null || mac === '') return
+    if (typeof mac !== 'string' || !MAC_ADDRESS_RX.test(mac)) {
+      throw new Error('ERR_THING_MACADDRESS_INVALID')
+    }
+    if (parseInt(mac.slice(0, 2), 16) & 1) {
+      throw new Error('ERR_THING_MACADDRESS_MULTICAST')
+    }
+  }
+
   _validateMinerDataChange (data) {
+    this._validateMacAddress(data)
     // find thing with same serial-num or mac or pos
     for (const k in this.mem.things) {
       const t = this.mem.things[k]
