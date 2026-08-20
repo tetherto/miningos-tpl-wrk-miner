@@ -242,17 +242,36 @@ class WrkMinerRack extends WrkRack {
     const isNewContainer = thgPrev.info.container !== thg.info.container
     const isNewSubnet = thgPrev.info.subnet !== thg.info.subnet
     const isMinerPosChanged = isNewPos || isNewContainer
-    // release current ip, if isStaticIpAssignment and minerPosChanged and not forceSetIp or container/subnet changed
-    if (
-      (this.conf.thing.isStaticIpAssignment && isMinerPosChanged && !thg.opts.forceSetIp) ||
-      ((isNewContainer || isNewSubnet) && thgPrev.opts.address)
-    ) {
-      await this.releaseIpThing(thgPrev)
-      thg.opts.address = null
+    const isIpMove = (isNewContainer || isNewSubnet) && !!thgPrev.opts.address
+    const keepsIp = thg.info.container !== MAINTENANCE && !this._isMinerOutsideContainerLocation(thg)
+
+    if (this.conf.thing.isStaticIpAssignment) {
+      // release current ip, if minerPosChanged and not forceSetIp or container/subnet changed
+      if ((isMinerPosChanged && !thg.opts.forceSetIp) || isIpMove) {
+        await this.releaseIpThing(thgPrev)
+        thg.opts.address = null
+      }
+      if (!thg.opts.address && keepsIp) {
+        await this.setIpThing(thg, !!thg.opts.forceSetIp)
+      }
+      return
+    }
+
+    if (isIpMove) {
+      if (keepsIp) {
+        // forced set swaps the lease inside one dhcp call, so the old lease
+        // survives a failed move and the miner keeps its current address
+        thg.opts.address = null
+        await this.setIpThing(thg, true)
+      } else {
+        await this.releaseIpThing(thgPrev)
+        thg.opts.address = null
+      }
+      return
     }
 
     // set ip if thing not in maintenance
-    if (!thg.opts.address && thg.info.container !== MAINTENANCE && !this._isMinerOutsideContainerLocation(thg)) {
+    if (!thg.opts.address && keepsIp) {
       await this.setIpThing(thg, !!thg.opts.forceSetIp)
     }
   }

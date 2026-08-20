@@ -367,28 +367,125 @@ test('updateThingHook0 applies mapped subnet before reassigning ip on container 
   const ctx = makeWrkCtx({ conf: { containerSubnets: { 'group-1': '10.182.0.0/24', 'group-2': '10.10.0.0/24' } } })
   const calls = []
   ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
-  ctx.setIpThing = async (thg) => { calls.push(['set', thg.info.subnet]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
 
   const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
   const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-2', pos: '1-1_1', subnet: '10.182.0.0/24' } }
   await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
 
   t.is(thg.info.subnet, '10.10.0.0/24')
-  t.alike(calls, [['release', '10.182.0.5'], ['set', '10.10.0.0/24']])
+  t.alike(calls, [['set', '10.10.0.0/24', true]], 'forced set without a separate release')
 })
 
 test('updateThingHook0 reassigns ip when mapped subnet changes without container change', async (t) => {
   const ctx = makeWrkCtx({ conf: { containerSubnets: { 'group-1': '10.20.0.0/24' } } })
   const calls = []
   ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
-  ctx.setIpThing = async (thg) => { calls.push(['set', thg.info.subnet]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
 
   const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
   const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
   await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
 
   t.is(thg.info.subnet, '10.20.0.0/24')
-  t.alike(calls, [['release', '10.182.0.5'], ['set', '10.20.0.0/24']])
+  t.alike(calls, [['set', '10.20.0.0/24', true]], 'forced set without a separate release')
+})
+
+test('updateThingHook0 keeps the old address when the forced set fails on a move', async (t) => {
+  const ctx = makeWrkCtx()
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async () => { throw new Error('ERR_IP_ALLOCATION_FAILED') }
+
+  const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-2', pos: '1-1_1', subnet: '10.10.0.0/24' } }
+
+  await t.exception(
+    () => WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev),
+    { message: 'ERR_IP_ALLOCATION_FAILED' }
+  )
+  t.alike(calls, [], 'old lease is never released when the move fails')
+  t.is(thgPrev.opts.address, '10.182.0.5', 'previous thing state is untouched')
+})
+
+test('updateThingHook0 releases the ip without setting a new one on a move to maintenance', async (t) => {
+  const ctx = makeWrkCtx()
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
+
+  const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: { address: '10.182.0.5' }, info: { container: 'maintenance', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.alike(calls, [['release', '10.182.0.5']])
+  t.is(thg.opts.address, null)
+})
+
+test('updateThingHook0 releases the ip without setting a new one on a move outside container', async (t) => {
+  const ctx = makeWrkCtx()
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
+
+  const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: { address: '10.182.0.5' }, info: { container: 'wh-1', pos: '1-1_1', subnet: '10.182.0.0/24', location: 'site1.warehouse' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.alike(calls, [['release', '10.182.0.5']])
+  t.is(thg.opts.address, null)
+})
+
+test('updateThingHook0 sets an ip with the caller force flag when there is no move', async (t) => {
+  const ctx = makeWrkCtx()
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
+
+  const thgPrev = { opts: {}, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: {}, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.alike(calls, [['set', '10.182.0.0/24', false]])
+})
+
+test('updateThingHook0 does nothing when nothing changed and an address exists', async (t) => {
+  const ctx = makeWrkCtx()
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
+
+  const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.alike(calls, [])
+})
+
+test('updateThingHook0 keeps release-then-set for static ip assignment', async (t) => {
+  const ctx = makeWrkCtx({ conf: { isStaticIpAssignment: true } })
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
+
+  const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-2', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.alike(calls, [['release', '10.182.0.5'], ['set', '10.182.0.0/24', false]])
+})
+
+test('updateThingHook0 releases on pos change without force for static ip assignment', async (t) => {
+  const ctx = makeWrkCtx({ conf: { isStaticIpAssignment: true } })
+  const calls = []
+  ctx.releaseIpThing = async (thg) => { calls.push(['release', thg.opts.address]) }
+  ctx.setIpThing = async (thg, forceSetIp) => { calls.push(['set', thg.info.subnet, forceSetIp]) }
+
+  const thgPrev = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-1_1', subnet: '10.182.0.0/24' } }
+  const thg = { opts: { address: '10.182.0.5' }, info: { container: 'group-1', pos: '1-2_1', subnet: '10.182.0.0/24' } }
+  await WrkMinerRack.prototype.updateThingHook0.call(ctx, thg, thgPrev)
+
+  t.alike(calls, [['release', '10.182.0.5'], ['set', '10.182.0.0/24', false]])
 })
 
 // ---------------------------------------------------------------------------
