@@ -15,7 +15,9 @@ const {
   STAT_SHARES_30M,
   STAT_STARTUP_STATUS,
   STAT_5M,
-  FIRMWARE_RPC
+  FIRMWARE_RPC,
+  MAC_ADDRESS_RX,
+  MAC_MULTICAST_BIT
 } = require('./lib/constants')
 const { saveStats } = require('./lib/wrk-fun-stats')
 const lWrkFunLogs = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/wrk-fun-logs')
@@ -88,7 +90,23 @@ class WrkMinerRack extends WrkRack {
     return 'miner'
   }
 
+  _validateMacAddress (data) {
+    const mac = data.info?.macAddress
+    if (mac === undefined || mac === null || mac === '') return
+    if (typeof mac !== 'string' || !MAC_ADDRESS_RX.test(mac)) {
+      throw new Error('ERR_THING_MACADDRESS_INVALID')
+    }
+    if (parseInt(mac.slice(0, 2), 16) & MAC_MULTICAST_BIT) {
+      throw new Error('ERR_THING_MACADDRESS_MULTICAST')
+    }
+  }
+
+  _normalizeMacAddress (mac) {
+    return String(mac).toLowerCase().replace(/-/g, ':')
+  }
+
   _validateMinerDataChange (data) {
+    this._validateMacAddress(data)
     // find thing with same serial-num or mac or pos
     for (const k in this.mem.things) {
       const t = this.mem.things[k]
@@ -97,7 +115,7 @@ class WrkMinerRack extends WrkRack {
       if (t.info?.serialNum && t.info.serialNum === data.info?.serialNum) {
         throw new Error('ERR_THING_SERIALNUM_EXISTS')
       }
-      if (t.info?.macAddress && t.info.macAddress.toLowerCase() === data.info?.macAddress?.toLowerCase()) {
+      if (t.info?.macAddress && data.info?.macAddress && this._normalizeMacAddress(t.info.macAddress) === this._normalizeMacAddress(data.info.macAddress)) {
         throw new Error('ERR_THING_MACADDRESS_EXISTS')
       }
       if (t.info?.pos && t.info.pos === data.info?.pos && t.info?.container && t.info.container === data.info?.container) {

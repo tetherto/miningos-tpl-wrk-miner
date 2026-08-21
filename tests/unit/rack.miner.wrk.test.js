@@ -213,6 +213,8 @@ function makeWrkCtx ({ things = {}, conf = {}, dirFirmwares = '/nonexistent' } =
   ctx._setUpPortBasedOnMinerType = proto._setUpPortBasedOnMinerType.bind(ctx)
   ctx._setUpSubnetBasedOnContainer = proto._setUpSubnetBasedOnContainer.bind(ctx)
   ctx._isMinerOutsideContainerLocation = proto._isMinerOutsideContainerLocation.bind(ctx)
+  ctx._validateMacAddress = proto._validateMacAddress.bind(ctx)
+  ctx._normalizeMacAddress = proto._normalizeMacAddress.bind(ctx)
   ctx._validateMinerDataChange = proto._validateMinerDataChange.bind(ctx)
   ctx._validateUpdateThing = proto._validateUpdateThing.bind(ctx)
   ctx._setStaticIpThing = proto._setStaticIpThing.bind(ctx)
@@ -559,6 +561,16 @@ test('_validateMinerDataChange throws ERR_THING_MACADDRESS_EXISTS on duplicate M
   )
 })
 
+test('_validateMinerDataChange throws ERR_THING_MACADDRESS_EXISTS on duplicate MAC with different separators', async (t) => {
+  const ctx = makeWrkCtx({
+    things: { t1: { id: 't1', info: { macAddress: 'AA:BB:CC:DD:EE:FF' }, opts: {} } }
+  })
+  await t.exception(
+    () => ctx._validateMinerDataChange({ id: 'new', info: { macAddress: 'aa-bb-cc-dd-ee-ff' }, opts: {} }),
+    { message: 'ERR_THING_MACADDRESS_EXISTS' }
+  )
+})
+
 test('_validateMinerDataChange throws ERR_THING_POS_EXISTS on duplicate pos+container', async (t) => {
   const ctx = makeWrkCtx({
     things: { t1: { id: 't1', info: { pos: '1-1_1', container: 'c1' }, opts: {} } }
@@ -585,6 +597,78 @@ test('_validateMinerDataChange skips duplicate check for same thing id', (t) => 
   })
   ctx._validateMinerDataChange({ id: 't1', info: { serialNum: 'SN123' }, opts: {} })
   t.pass()
+})
+
+// ---------------------------------------------------------------------------
+// _validateMacAddress
+// ---------------------------------------------------------------------------
+
+test('_validateMacAddress throws ERR_THING_MACADDRESS_INVALID on malformed values', async (t) => {
+  const ctx = makeWrkCtx()
+  const badMacs = [
+    'AA:BB:CC:DD:EE',
+    'AA:BB:CC:DD:EE:FF:00',
+    'AABBCCDDEEFF',
+    'AA:BB:CC:DD:EE:GG',
+    'AA.BB.CC.DD.EE.FF',
+    ' AA:BB:CC:DD:EE:FF',
+    'AA:BB-CC:DD-EE:FF',
+    'AA-BB-CC-DD-EE:FF',
+    123
+  ]
+  for (const macAddress of badMacs) {
+    await t.exception(
+      () => ctx._validateMacAddress({ info: { macAddress } }),
+      { message: 'ERR_THING_MACADDRESS_INVALID' },
+      `rejects "${macAddress}"`
+    )
+  }
+})
+
+test('_validateMacAddress throws ERR_THING_MACADDRESS_MULTICAST on multicast values', async (t) => {
+  const ctx = makeWrkCtx()
+  const multicastMacs = ['01:00:5E:00:00:01', '33:33:00:00:00:01', 'ff:ff:ff:ff:ff:ff', '0B:AA:BB:CC:DD:EE']
+  for (const macAddress of multicastMacs) {
+    await t.exception(
+      () => ctx._validateMacAddress({ info: { macAddress } }),
+      { message: 'ERR_THING_MACADDRESS_MULTICAST' },
+      `rejects "${macAddress}"`
+    )
+  }
+})
+
+test('_validateMacAddress passes valid unicast values', (t) => {
+  const ctx = makeWrkCtx()
+  const validMacs = ['00:1A:2B:3C:4D:5E', 'aa:bb:cc:dd:ee:ff', 'AA-BB-CC-DD-EE-FF', '02:00:00:00:00:01']
+  for (const macAddress of validMacs) {
+    ctx._validateMacAddress({ info: { macAddress } })
+  }
+  t.pass()
+})
+
+test('_validateMacAddress noops when macAddress is absent or empty', (t) => {
+  const ctx = makeWrkCtx()
+  ctx._validateMacAddress({ info: { serialNum: 'SN1' } })
+  ctx._validateMacAddress({ info: { macAddress: null } })
+  ctx._validateMacAddress({ info: { macAddress: '' } })
+  ctx._validateMacAddress({})
+  t.pass()
+})
+
+test('_validateMinerDataChange throws ERR_THING_MACADDRESS_INVALID on malformed MAC', async (t) => {
+  const ctx = makeWrkCtx()
+  await t.exception(
+    () => ctx._validateMinerDataChange({ id: 'new', info: { macAddress: 'not-a-mac' }, opts: {} }),
+    { message: 'ERR_THING_MACADDRESS_INVALID' }
+  )
+})
+
+test('_validateMinerDataChange throws ERR_THING_MACADDRESS_MULTICAST on multicast MAC', async (t) => {
+  const ctx = makeWrkCtx()
+  await t.exception(
+    () => ctx._validateMinerDataChange({ id: 'new', info: { macAddress: '01:00:5E:00:00:01' }, opts: {} }),
+    { message: 'ERR_THING_MACADDRESS_MULTICAST' }
+  )
 })
 
 // ---------------------------------------------------------------------------
