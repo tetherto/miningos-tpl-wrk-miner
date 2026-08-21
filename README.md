@@ -138,3 +138,12 @@ Check out concrete implementations of Miner here:
   }
 }
 ```
+
+##### Credentials:
+
+`_getThingCredentials(thg)` resolves the credentials used to connect to a miner, in order of precedence:
+
+1. **`miner.overwriteCredsWithDefault`** (optional, boolean): when `true`, `miner.defaultUsername` / `miner.defaultPassword` are used for every miner connection, overriding whatever is stored on the thing. Nothing is written to the device or to the thing's `opts`; set it back to `false` and per-miner credentials apply again.
+2. Per-thing `opts.username` / `opts.password`.
+3. **`miner.defaultUsername` / `miner.defaultPassword`** (optional): fallback credentials for things registered without their own.
+
