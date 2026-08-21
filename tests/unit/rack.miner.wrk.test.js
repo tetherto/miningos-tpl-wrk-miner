@@ -883,3 +883,52 @@ test('_saveMiningStartupStatus covers onlinePct computation when tailLog returns
   const result = await ctx._saveMiningStartupStatus(new Date())
   t.ok(result === 0 || result === 1, 'returns 0 or 1')
 })
+
+// ---------------------------------------------------------------------------
+// _getThingCredentials
+// ---------------------------------------------------------------------------
+
+function makeCredsCtx (minerConf = {}) {
+  const ctx = { conf: { thing: { miner: minerConf } } }
+  ctx._getThingCredentials = WrkMinerRack.prototype._getThingCredentials.bind(ctx)
+  return ctx
+}
+
+test('_getThingCredentials returns thing opts when nothing is configured', (t) => {
+  const ctx = makeCredsCtx()
+  const thg = { opts: { username: 'optsuser', password: 'optspass' } }
+  t.alike(ctx._getThingCredentials(thg), { username: 'optsuser', password: 'optspass' })
+})
+
+test('_getThingCredentials handles missing miner conf section', (t) => {
+  const ctx = { conf: { thing: {} } }
+  ctx._getThingCredentials = WrkMinerRack.prototype._getThingCredentials.bind(ctx)
+  const thg = { opts: { password: 'p' } }
+  t.alike(ctx._getThingCredentials(thg), { username: undefined, password: 'p' })
+})
+
+test('_getThingCredentials falls back to config defaults when opts are missing', (t) => {
+  const ctx = makeCredsCtx({ defaultUsername: 'confuser', defaultPassword: 'confpass' })
+  t.alike(ctx._getThingCredentials({ opts: {} }), { username: 'confuser', password: 'confpass' })
+  t.alike(ctx._getThingCredentials({ opts: { password: 'optspass' } }), { username: 'confuser', password: 'optspass' })
+})
+
+test('_getThingCredentials uses defaults for every thing when overwriteCredsWithDefault is true', (t) => {
+  const ctx = makeCredsCtx({
+    defaultUsername: 'confuser',
+    defaultPassword: 'confpass',
+    overwriteCredsWithDefault: true
+  })
+  const thg = { opts: { username: 'optsuser', password: 'optspass' } }
+  t.alike(ctx._getThingCredentials(thg), { username: 'confuser', password: 'confpass' })
+})
+
+test('_getThingCredentials keeps current logic when overwriteCredsWithDefault is false', (t) => {
+  const ctx = makeCredsCtx({
+    defaultUsername: 'confuser',
+    defaultPassword: 'confpass',
+    overwriteCredsWithDefault: false
+  })
+  const thg = { opts: { username: 'optsuser', password: 'optspass' } }
+  t.alike(ctx._getThingCredentials(thg), { username: 'optsuser', password: 'optspass' })
+})

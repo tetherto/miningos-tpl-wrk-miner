@@ -241,6 +241,17 @@ class WrkMinerRack extends WrkRack {
     return false
   }
 
+  _getThingCredentials (thg) {
+    const minerConf = this.conf.thing.miner || {}
+    if (minerConf.overwriteCredsWithDefault) {
+      return { username: minerConf.defaultUsername, password: minerConf.defaultPassword }
+    }
+    return {
+      username: thg.opts.username || minerConf.defaultUsername,
+      password: thg.opts.password || minerConf.defaultPassword
+    }
+  }
+
   async registerThingHook0 (thg) {
     if (this._isMinerOutsideContainerLocation(thg)) return
     this._setUpPortBasedOnMinerType(thg)
