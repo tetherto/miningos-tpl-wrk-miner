@@ -234,7 +234,7 @@ class WrkMinerRack extends WrkRack {
   }
 
   async updateThingHook0 (thg, thgPrev) {
-    super.updateThingHook0(thg, thgPrev)
+    await super.updateThingHook0(thg, thgPrev)
     this._setUpPortBasedOnMinerType(thg)
     this._setUpSubnetBasedOnContainer(thg)
 
@@ -242,18 +242,34 @@ class WrkMinerRack extends WrkRack {
     const isNewContainer = thgPrev.info.container !== thg.info.container
     const isNewSubnet = thgPrev.info.subnet !== thg.info.subnet
     const isMinerPosChanged = isNewPos || isNewContainer
-    // release current ip, if isStaticIpAssignment and minerPosChanged and not forceSetIp or container/subnet changed
-    if (
-      (this.conf.thing.isStaticIpAssignment && isMinerPosChanged && !thg.opts.forceSetIp) ||
-      ((isNewContainer || isNewSubnet) && thgPrev.opts.address)
-    ) {
-      await this.releaseIpThing(thgPrev)
-      thg.opts.address = null
+    const isIpMove = isNewContainer || isNewSubnet
+    const shouldHaveIp = thg.info.container !== MAINTENANCE && !this._isMinerOutsideContainerLocation(thg)
+
+    if (this.conf.thing.isStaticIpAssignment) {
+      // release current ip, if minerPosChanged and not forceSetIp or container/subnet changed
+      if ((isMinerPosChanged && !thg.opts.forceSetIp) || (isIpMove && thgPrev.opts.address)) {
+        await this.releaseIpThing(thgPrev)
+        thg.opts.address = null
+      }
+      if (!thg.opts.address && shouldHaveIp) {
+        await this.setIpThing(thg, !!thg.opts.forceSetIp)
+      }
+      return
     }
 
-    // set ip if thing not in maintenance
-    if (!thg.opts.address && thg.info.container !== MAINTENANCE && !this._isMinerOutsideContainerLocation(thg)) {
-      await this.setIpThing(thg, !!thg.opts.forceSetIp)
+    if (isIpMove && !shouldHaveIp) {
+      if (thgPrev.opts.address) {
+        await this.releaseIpThing(thgPrev)
+      }
+      thg.opts.address = null
+      return
+    }
+
+    if ((isIpMove || !thg.opts.address) && shouldHaveIp) {
+      // a forced set swaps the lease inside one dhcp job, and since
+      // svc-facs-dhcp-kea#13 the old lease is only released after the new one
+      // is in place, so a failed move keeps the miner's current address
+      await this.setIpThing(thg, isIpMove || !!thg.opts.forceSetIp)
     }
   }
 
