@@ -113,10 +113,10 @@ libAlerts.specs.miner_default = {
   'custom.low_hashrate.medium': {
     configSchema: {
       enabled: {
-        type: 'boolean',
+        type: 'boolean'
       },
       minHashRateMhs: {
-        type: 'number',
+        type: 'number'
       }
     },
     valid: (ctx, snap) => {
@@ -136,17 +136,17 @@ libAlerts.specs.miner_default = {
       return {
         message: 'Low hashrate',
         description: 'Low hashrate on miner',
-        severity: 'medium',
+        severity: 'medium'
       }
     }
   },
   'custom.low_hashrate.high': {
     configSchema: {
       enabled: {
-        type: 'boolean',
+        type: 'boolean'
       },
       minHashRateMhs: {
-        type: 'number',
+        type: 'number'
       }
     },
     valid: (ctx, snap) => {
@@ -166,7 +166,7 @@ libAlerts.specs.miner_default = {
       return {
         message: 'Low hashrate',
         description: 'Low hashrate on miner',
-        severity: 'High',
+        severity: 'High'
       }
     }
   }
