@@ -116,7 +116,7 @@ libAlerts.specs.miner_default = {
         type: 'boolean'
       },
       notes: {
-        type: 'string',
+        type: 'string'
       },
       minHashRateMhs: {
         type: 'number'
@@ -149,7 +149,7 @@ libAlerts.specs.miner_default = {
         type: 'boolean'
       },
       notes: {
-        type: 'string',
+        type: 'string'
       },
       minHashRateMhs: {
         type: 'number'
