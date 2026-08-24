@@ -7,7 +7,7 @@ const crypto = require('crypto')
 const getRandomIP = () => [...crypto.randomBytes(4)].join('.')
 
 // Helper function to create mock context
-const createMockContext = (thingConf = {}) => {
+const createMockContext = (thingConf = {}, configuredParams = {}) => {
   return {
     id: 'test-miner-123',
     thingConf: {
@@ -16,7 +16,8 @@ const createMockContext = (thingConf = {}) => {
         { url: 'stratum+tcp://pool2.example.com:4444', worker_name: 'worker2' }
       ],
       ...thingConf
-    }
+    },
+    configuredParams
   }
 }
 
@@ -190,7 +191,14 @@ test('probe returns false when pool_config is empty', (t) => {
 })
 
 test('alert specs have required properties', (t) => {
-  const alertTypes = ['wrong_miner_pool', 'wrong_miner_subaccount', 'wrong_worker_name', 'ip_worker_name']
+  const alertTypes = [
+    'wrong_miner_pool',
+    'wrong_miner_subaccount',
+    'wrong_worker_name',
+    'ip_worker_name',
+    'custom.low_hashrate.medium',
+    'custom.low_hashrate.high'
+  ]
 
   for (const alertType of alertTypes) {
     const alertSpec = libAlerts.specs.miner_default[alertType]
@@ -225,6 +233,76 @@ test('edge cases - missing network config', (t) => {
   // This should not trigger an alert because the snap is not valid for pool config
   t.not(alertSpec.probe(ctx, snap), 'Should not trigger alert when network config is missing')
 })
+
+for (const [key, severity] of [['custom.low_hashrate.medium', 'medium'], ['custom.low_hashrate.high', 'High']]) {
+  test(`${key} alert - has configSchema for enabled and minHashRateMhs`, (t) => {
+    const alertSpec = libAlerts.specs.miner_default[key]
+    t.ok(alertSpec.configSchema.enabled, 'Should declare enabled in configSchema')
+    t.is(alertSpec.configSchema.enabled.type, 'boolean')
+    t.ok(alertSpec.configSchema.minHashRateMhs, 'Should declare minHashRateMhs in configSchema')
+    t.is(alertSpec.configSchema.minHashRateMhs.type, 'number')
+  })
+
+  test(`${key} alert - valid is false when not enabled`, (t) => {
+    const ctx = createMockContext({}, { [key]: { enabled: false, minHashRateMhs: 100 } })
+    const snap = createMockSnap()
+
+    const alertSpec = libAlerts.specs.miner_default[key]
+    t.not(alertSpec.valid(ctx, snap), 'Should not be valid when disabled')
+  })
+
+  test(`${key} alert - valid is false when configuredParams is missing`, (t) => {
+    const ctx = createMockContext()
+    const snap = createMockSnap()
+
+    const alertSpec = libAlerts.specs.miner_default[key]
+    t.not(alertSpec.valid(ctx, snap), 'Should not be valid when configuredParams is missing entirely')
+  })
+
+  test(`${key} alert - valid is true when enabled and snap is a valid pool config snap`, (t) => {
+    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
+    const snap = createMockSnap()
+
+    const alertSpec = libAlerts.specs.miner_default[key]
+    t.ok(alertSpec.valid(ctx, snap), 'Should be valid when enabled and pool config snap is valid')
+  })
+
+  test(`${key} alert - valid is false when enabled but miner is offline`, (t) => {
+    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
+    const snap = createMockSnap({}, { status: 'offline' })
+
+    const alertSpec = libAlerts.specs.miner_default[key]
+    t.not(alertSpec.valid(ctx, snap), 'Should not be valid when miner is offline, even if enabled')
+  })
+
+  test(`${key} alert - probe does not trigger when hashrate is above threshold`, (t) => {
+    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
+    const snap = createMockSnap({}, { hashrate_mhs: { avg: 150 } })
+
+    const alertSpec = libAlerts.specs.miner_default[key]
+    t.absent(alertSpec.probe(ctx, snap), 'Should not trigger alert when hashrate is above threshold')
+  })
+
+  test(`${key} alert - probe does not trigger when hashrate equals threshold`, (t) => {
+    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
+    const snap = createMockSnap({}, { hashrate_mhs: { avg: 100 } })
+
+    const alertSpec = libAlerts.specs.miner_default[key]
+    t.absent(alertSpec.probe(ctx, snap), 'Should not trigger alert when hashrate equals threshold')
+  })
+
+  test(`${key} alert - probe triggers with correct payload when hashrate is below threshold`, (t) => {
+    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
+    const snap = createMockSnap({}, { hashrate_mhs: { avg: 50 } })
+
+    const alertSpec = libAlerts.specs.miner_default[key]
+    const result = alertSpec.probe(ctx, snap)
+    t.ok(result, 'Should trigger alert when hashrate is below threshold')
+    t.is(result.message, 'Low hashrate')
+    t.is(result.description, 'Low hashrate on miner')
+    t.is(result.severity, severity)
+  })
+}
 
 test('edge cases - invalid snap structure', (t) => {
   const ctx = createMockContext()

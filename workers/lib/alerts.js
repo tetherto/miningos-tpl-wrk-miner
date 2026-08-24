@@ -109,6 +109,66 @@ libAlerts.specs.miner_default = {
       }
       return false
     }
+  },
+  'custom.low_hashrate.medium': {
+    configSchema: {
+      enabled: {
+        type: 'boolean',
+      },
+      minHashRateMhs: {
+        type: 'number',
+      }
+    },
+    valid: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.medium']
+      const enabled = configuredParams?.enabled
+
+      return enabled && isValidPoolConfigSnap(ctx, snap)
+    },
+    probe: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.medium']
+      const threshold = configuredParams.minHashRateMhs
+      const breached = snap.stats.hashrate_mhs.avg < threshold
+      if (!breached) {
+        return
+      }
+
+      return {
+        message: 'Low hashrate',
+        description: 'Low hashrate on miner',
+        severity: 'medium',
+      }
+    }
+  },
+  'custom.low_hashrate.high': {
+    configSchema: {
+      enabled: {
+        type: 'boolean',
+      },
+      minHashRateMhs: {
+        type: 'number',
+      }
+    },
+    valid: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.high']
+      const enabled = configuredParams?.enabled
+
+      return enabled && isValidPoolConfigSnap(ctx, snap)
+    },
+    probe: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.high']
+      const threshold = configuredParams.minHashRateMhs
+      const breached = snap.stats.hashrate_mhs.avg < threshold
+      if (!breached) {
+        return
+      }
+
+      return {
+        message: 'Low hashrate',
+        description: 'Low hashrate on miner',
+        severity: 'High',
+      }
+    }
   }
 }
 
