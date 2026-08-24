@@ -115,6 +115,9 @@ libAlerts.specs.miner_default = {
       enabled: {
         type: 'boolean'
       },
+      notes: {
+        type: 'string',
+      },
       minHashRateMhs: {
         type: 'number'
       }
@@ -144,6 +147,9 @@ libAlerts.specs.miner_default = {
     configSchema: {
       enabled: {
         type: 'boolean'
+      },
+      notes: {
+        type: 'string',
       },
       minHashRateMhs: {
         type: 'number'
