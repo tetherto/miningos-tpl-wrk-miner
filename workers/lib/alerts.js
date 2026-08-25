@@ -109,6 +109,32 @@ libAlerts.specs.miner_default = {
       }
       return false
     }
+  },
+  'custom.low_hashrate.warning': {
+    valid: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.warning']
+      const enabled = configuredParams?.enabled
+
+      return enabled && isValidPoolConfigSnap(ctx, snap)
+    },
+    probe: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.warning']
+      const threshold = configuredParams.minHashRateMhs
+      return snap.stats.hashrate_mhs.avg < threshold
+    }
+  },
+  'custom.low_hashrate.critical': {
+    valid: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.critical']
+      const enabled = configuredParams?.enabled
+
+      return enabled && isValidPoolConfigSnap(ctx, snap)
+    },
+    probe: (ctx, snap) => {
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.critical']
+      const threshold = configuredParams.minHashRateMhs
+      return snap.stats.hashrate_mhs.avg < threshold
+    }
   }
 }
 
