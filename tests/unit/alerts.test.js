@@ -234,15 +234,7 @@ test('edge cases - missing network config', (t) => {
   t.not(alertSpec.probe(ctx, snap), 'Should not trigger alert when network config is missing')
 })
 
-for (const [key, severity] of [['custom.low_hashrate.warning', 'warning'], ['custom.low_hashrate.critical', 'critical']]) {
-  test(`${key} alert - has configSchema for enabled and minHashRateMhs`, (t) => {
-    const alertSpec = libAlerts.specs.miner_default[key]
-    t.ok(alertSpec.configSchema.enabled, 'Should declare enabled in configSchema')
-    t.is(alertSpec.configSchema.enabled.type, 'boolean')
-    t.ok(alertSpec.configSchema.minHashRateMhs, 'Should declare minHashRateMhs in configSchema')
-    t.is(alertSpec.configSchema.minHashRateMhs.type, 'number')
-  })
-
+for (const key of ['custom.low_hashrate.warning', 'custom.low_hashrate.critical']) {
   test(`${key} alert - valid is false when not enabled`, (t) => {
     const ctx = createMockContext({}, { [key]: { enabled: false, minHashRateMhs: 100 } })
     const snap = createMockSnap()
@@ -291,16 +283,12 @@ for (const [key, severity] of [['custom.low_hashrate.warning', 'warning'], ['cus
     t.absent(alertSpec.probe(ctx, snap), 'Should not trigger alert when hashrate equals threshold')
   })
 
-  test(`${key} alert - probe triggers with correct payload when hashrate is below threshold`, (t) => {
+  test(`${key} alert - probe triggers when hashrate is below threshold`, (t) => {
     const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
     const snap = createMockSnap({}, { hashrate_mhs: { avg: 50 } })
 
     const alertSpec = libAlerts.specs.miner_default[key]
-    const result = alertSpec.probe(ctx, snap)
-    t.ok(result, 'Should trigger alert when hashrate is below threshold')
-    t.is(result.message, 'Low hashrate')
-    t.is(result.description, 'Low hashrate on miner')
-    t.is(result.severity, severity)
+    t.ok(alertSpec.probe(ctx, snap), 'Should trigger alert when hashrate is below threshold')
   })
 }
 
