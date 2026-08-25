@@ -110,7 +110,7 @@ libAlerts.specs.miner_default = {
       return false
     }
   },
-  'custom.low_hashrate.medium': {
+  'custom.low_hashrate.warning': {
     configSchema: {
       enabled: {
         type: 'boolean'
@@ -123,13 +123,13 @@ libAlerts.specs.miner_default = {
       }
     },
     valid: (ctx, snap) => {
-      const configuredParams = ctx.configuredParams['custom.low_hashrate.medium']
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.warning']
       const enabled = configuredParams?.enabled
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
     probe: (ctx, snap) => {
-      const configuredParams = ctx.configuredParams['custom.low_hashrate.medium']
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.warning']
       const threshold = configuredParams.minHashRateMhs
       const breached = snap.stats.hashrate_mhs.avg < threshold
       if (!breached) {
@@ -139,11 +139,11 @@ libAlerts.specs.miner_default = {
       return {
         message: 'Low hashrate',
         description: 'Low hashrate on miner',
-        severity: 'medium'
+        severity: 'warning'
       }
     }
   },
-  'custom.low_hashrate.high': {
+  'custom.low_hashrate.critical': {
     configSchema: {
       enabled: {
         type: 'boolean'
@@ -156,13 +156,13 @@ libAlerts.specs.miner_default = {
       }
     },
     valid: (ctx, snap) => {
-      const configuredParams = ctx.configuredParams['custom.low_hashrate.high']
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.critical']
       const enabled = configuredParams?.enabled
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
     probe: (ctx, snap) => {
-      const configuredParams = ctx.configuredParams['custom.low_hashrate.high']
+      const configuredParams = ctx.configuredParams['custom.low_hashrate.critical']
       const threshold = configuredParams.minHashRateMhs
       const breached = snap.stats.hashrate_mhs.avg < threshold
       if (!breached) {
@@ -172,7 +172,7 @@ libAlerts.specs.miner_default = {
       return {
         message: 'Low hashrate',
         description: 'Low hashrate on miner',
-        severity: 'High'
+        severity: 'critical'
       }
     }
   }
