@@ -196,8 +196,8 @@ test('alert specs have required properties', (t) => {
     'wrong_miner_subaccount',
     'wrong_worker_name',
     'ip_worker_name',
-    'custom.low_hashrate.medium',
-    'custom.low_hashrate.high'
+    'custom.low_hashrate.warning',
+    'custom.low_hashrate.critical'
   ]
 
   for (const alertType of alertTypes) {
@@ -234,7 +234,7 @@ test('edge cases - missing network config', (t) => {
   t.not(alertSpec.probe(ctx, snap), 'Should not trigger alert when network config is missing')
 })
 
-for (const [key, severity] of [['custom.low_hashrate.medium', 'medium'], ['custom.low_hashrate.high', 'High']]) {
+for (const [key, severity] of [['custom.low_hashrate.warning', 'warning'], ['custom.low_hashrate.critical', 'critical']]) {
   test(`${key} alert - has configSchema for enabled and minHashRateMhs`, (t) => {
     const alertSpec = libAlerts.specs.miner_default[key]
     t.ok(alertSpec.configSchema.enabled, 'Should declare enabled in configSchema')
