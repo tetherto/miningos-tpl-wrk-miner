@@ -165,7 +165,7 @@ test('integration:firmware — updateFirmware is a whitelisted action on WrkMine
     ['reboot', 1],
     ['setPowerMode', 1],
     ['setLED', 1],
-    ['setupPools', 1],
+    ['setupPools', 2],
     ['registerThing', 1],
     ['updateThing', 1],
     ['forgetThings', 1],
