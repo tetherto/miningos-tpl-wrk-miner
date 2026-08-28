@@ -277,6 +277,30 @@ test('setupPools propagates an in-band driver rejection', async (t) => {
   t.absent(miner.poolConfig, 'Should not record a config the device refused')
 })
 
+test('setupPools clears a stale poolConfig when no config is supplied', async (t) => {
+  const miner = new BaseMiner()
+  miner.opts = { id: 'miner-001' }
+  miner.conf = { pools: [{ url: 'stratum+tcp://pool1.com:4444', worker_name: 'worker1' }] }
+  miner.setPools = async () => ({ success: true })
+
+  await miner.setupPools({ config: { id: 'cfg-42', poolUrls: [{ url: 'u', workerName: 'w' }] } })
+  t.is(miner.poolConfig, 'cfg-42', 'Should record the assigned config')
+
+  await miner.setupPools()
+
+  t.is(miner.poolConfig, null, 'Should clear the config once the miner is back on conf pools')
+})
+
+test('setupPools falls back to a generic error when the driver gives none', async (t) => {
+  const miner = new BaseMiner()
+  miner.opts = { id: 'miner-001' }
+  miner.setPools = async () => ({ success: false })
+
+  const result = await miner.setupPools({ config: { id: 'cfg-42', poolUrls: [{ url: 'u', workerName: 'w' }] } })
+
+  t.alike(result, { success: false, error_msg: 'ERR_SETUP_POOLS_FAILED' })
+})
+
 test('setupPools accepts the whatsminer error_msg spelling', async (t) => {
   const miner = new BaseMiner()
   miner.opts = { id: 'miner-001' }

@@ -117,10 +117,10 @@ class BaseMiner extends BaseThing {
 
       const res = await this.setPools(poolsToUse, true)
       if (res?.success === false) {
-        return { success: false, error_msg: res.error_msg || res.error }
+        return { success: false, error_msg: res.error_msg || res.error || 'ERR_SETUP_POOLS_FAILED' }
       }
 
-      if (configId) this.poolConfig = configId
+      this.poolConfig = configId || null
       return { success: true }
     } catch (e) {
       return { success: false, error_msg: e.message }
