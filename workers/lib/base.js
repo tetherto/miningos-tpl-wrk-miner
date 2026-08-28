@@ -106,15 +106,21 @@ class BaseMiner extends BaseThing {
   async setupPools (params) {
     try {
       let poolsToUse
+      let configId
 
       if (params?.config) {
         poolsToUse = this._transformPoolConfig(params.config)
-        this.poolConfig = params.config.id
+        configId = params.config.id
       } else {
         poolsToUse = this.conf.pools
       }
 
-      await this.setPools(poolsToUse, true)
+      const res = await this.setPools(poolsToUse, true)
+      if (res?.success === false) {
+        return { success: false, error_msg: res.error_msg || res.error }
+      }
+
+      if (configId) this.poolConfig = configId
       return { success: true }
     } catch (e) {
       return { success: false, error_msg: e.message }
