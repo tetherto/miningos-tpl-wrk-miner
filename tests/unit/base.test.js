@@ -264,6 +264,64 @@ test('setupPools with params.config calls _transformPoolConfig and sets poolConf
   t.is(usedPools[0].url, 'stratum+tcp://pool1.com:4444')
 })
 
+test('setupPools propagates an in-band driver rejection', async (t) => {
+  const miner = new BaseMiner()
+  miner.opts = { id: 'miner-001' }
+  const poolUrls = [{ url: 'stratum+tcp://pool1.com:4444', workerName: 'w1' }]
+
+  miner.setPools = async () => ({ success: false, error: 'set_miner_conf.cgi 401' })
+
+  const result = await miner.setupPools({ config: { id: 'cfg-42', poolUrls } })
+
+  t.alike(result, { success: false, error_msg: 'set_miner_conf.cgi 401' }, 'Should report the driver failure')
+  t.absent(miner.poolConfig, 'Should not record a config the device refused')
+})
+
+test('setupPools clears a stale poolConfig when no config is supplied', async (t) => {
+  const miner = new BaseMiner()
+  miner.opts = { id: 'miner-001' }
+  miner.conf = { pools: [{ url: 'stratum+tcp://pool1.com:4444', worker_name: 'worker1' }] }
+  miner.setPools = async () => ({ success: true })
+
+  await miner.setupPools({ config: { id: 'cfg-42', poolUrls: [{ url: 'u', workerName: 'w' }] } })
+  t.is(miner.poolConfig, 'cfg-42', 'Should record the assigned config')
+
+  await miner.setupPools()
+
+  t.is(miner.poolConfig, null, 'Should clear the config once the miner is back on conf pools')
+})
+
+test('setupPools falls back to a generic error when the driver gives none', async (t) => {
+  const miner = new BaseMiner()
+  miner.opts = { id: 'miner-001' }
+  miner.setPools = async () => ({ success: false })
+
+  const result = await miner.setupPools({ config: { id: 'cfg-42', poolUrls: [{ url: 'u', workerName: 'w' }] } })
+
+  t.alike(result, { success: false, error_msg: 'ERR_SETUP_POOLS_FAILED' })
+})
+
+test('setupPools accepts the whatsminer error_msg spelling', async (t) => {
+  const miner = new BaseMiner()
+  miner.opts = { id: 'miner-001' }
+  miner.setPools = async () => ({ success: false, error_msg: 'update_pools code 14' })
+
+  const result = await miner.setupPools({ config: { id: 'cfg-42', poolUrls: [{ url: 'u', workerName: 'w' }] } })
+
+  t.alike(result, { success: false, error_msg: 'update_pools code 14' })
+})
+
+test('setupPools treats a skipped no-op write as success', async (t) => {
+  const miner = new BaseMiner()
+  miner.opts = { id: 'miner-001' }
+  miner.setPools = async () => ({ success: true, message: 'Pools are same, skipping' })
+
+  const result = await miner.setupPools({ config: { id: 'cfg-42', poolUrls: [{ url: 'u', workerName: 'w' }] } })
+
+  t.alike(result, { success: true })
+  t.is(miner.poolConfig, 'cfg-42')
+})
+
 test('setupPools failure', async (t) => {
   const miner = new BaseMiner()
   miner.conf = { pools: [{ url: 'stratum+tcp://pool1.com:4444', worker_name: 'worker1' }] }
