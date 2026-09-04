@@ -3,7 +3,7 @@
 const test = require('brittle')
 const libStats = require('../../workers/lib/stats')
 const { STATUS, MAINTENANCE } = require('../../workers/lib/constants')
-const { hasErrorAndPositiveHashrate, getRackFromPos, groupByContainerRack } = require('../../workers/lib/utils')
+const { hasErrorAndPositiveHashrate, getRackFromPos, groupByContainerRack, groupByContainerPos } = require('../../workers/lib/utils')
 
 const testEntries = [
   { last: { snap: { stats: { status: STATUS.OFFLINE, hashrate_mhs: { t_5m: 0 } }, config: { power_mode: 'low' } } }, info: { container: 'group1', type: 'typeA' } },
@@ -128,6 +128,23 @@ test('groupByContainerRack returns container-rack key', (t) => {
   t.is(groupByContainerRack(extNoPos), null, 'Should return null when pos is missing')
   t.is(groupByContainerRack(extNoContainer), null, 'Should return null when container is missing')
   t.is(groupByContainerRack(null), null, 'Should return null when ext is null')
+})
+
+test('groupByContainerPos returns the container-position key', (t) => {
+  t.is(groupByContainerPos({ info: { container: 'group-16', pos: '16-3_12' } }), 'group-16-16-3_12', 'Should join container and pos')
+  t.is(groupByContainerPos({ info: { container: 'group-1' } }), null, 'Should return null when pos is missing')
+  t.is(groupByContainerPos({ info: { pos: '1-1_1' } }), null, 'Should return null when container is missing')
+  t.is(groupByContainerPos(null), null, 'Should return null when ext is null')
+})
+
+test('temperature_c_group is a daily per-position snapshot op', (t) => {
+  const op = libStats.specs.miner_default.ops.temperature_c_group
+
+  t.ok(op, 'temperature_c_group should be defined')
+  t.is(op.op, 'group', 'Should keep the raw reading per position')
+  t.is(op.src, 'last.snap.stats.temperature_c', 'Should store the whole temperature reading')
+  t.alike(op.statKeys, ['stat-1D'], 'Should only be built for the daily stat key')
+  t.is(op.group({ info: { container: 'group-16', pos: '16-3_12' } }), 'group-16-16-3_12', 'Should key by container and position')
 })
 
 // Rack stats operations tests

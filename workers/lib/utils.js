@@ -18,6 +18,13 @@ function groupByContainerRack (entry) {
   return `${container}_${rack}`
 }
 
+function groupByContainerPos (entry) {
+  const container = getVal(entry, 'info.container')
+  const pos = getVal(entry, 'info.pos')
+  if (!container || !pos) return null
+  return `${container}-${pos}`
+}
+
 function getRandomString (length) {
   return crypto.randomBytes(length)
     .toString('base64')
@@ -46,5 +53,6 @@ module.exports = {
   hasErrorAndPositiveHashrate,
   sumPoolsShares,
   groupByContainerRack,
+  groupByContainerPos,
   getRackFromPos
 }

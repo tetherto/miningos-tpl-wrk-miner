@@ -2,7 +2,7 @@
 
 const libStats = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/stats')
 const { groupBy } = require('@tetherto/miningos-lib-stats/utils')
-const { hasErrorAndPositiveHashrate, groupByContainerRack } = require('./utils')
+const { hasErrorAndPositiveHashrate, groupByContainerRack, groupByContainerPos } = require('./utils')
 const { STATUS, POWER_MODE, MAINTENANCE } = require('./constants')
 
 libStats.conf.skipTagPrefixes = ['pos-', 'id-', 'code-', 'site-']
@@ -135,6 +135,12 @@ libStats.specs.miner_default = {
       op: 'group_max',
       src: 'last.snap.stats.temperature_c.max',
       group: groupBy('info.container')
+    },
+    temperature_c_group: {
+      op: 'group',
+      src: 'last.snap.stats.temperature_c',
+      group: groupByContainerPos,
+      statKeys: ['stat-1D']
     },
     offline_cnt: {
       op: 'group_cnt',
