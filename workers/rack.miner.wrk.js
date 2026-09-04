@@ -64,7 +64,7 @@ class WrkMinerRack extends WrkRack {
           ['reboot', 1], // [action, reqVotes]
           ['setPowerMode', 1],
           ['setLED', 1],
-          ['setupPools', 2],
+          ['setupPools', 1],
           ['registerThing', 1],
           ['updateThing', 1],
           ['forgetThings', 1],
