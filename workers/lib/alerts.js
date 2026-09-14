@@ -52,63 +52,71 @@ function areMinerPoolsUrlsCorrectlySetup (minerPools, confPools) {
   return minerPools?.length && confPools?.length
 }
 
+function wrongMinerPoolProbe (ctx, snap) {
+  const configPools = ctx.thingConf.pools
+  const minerPools = snap.config.pool_config
+  return !areMinerPoolsUrlsCorrectlySetup(minerPools, configPools)
+}
+
+function wrongMinerSubaccountProbe (ctx, snap) {
+  const configPools = ctx.thingConf.pools
+  const minerPools = snap.config.pool_config
+  if (configPools.length > 0 && minerPools.length > 0) {
+    return !isConfigWorkerNameInPoolUsername(minerPools, configPools)
+  }
+  return false
+}
+
+function wrongWorkerNameProbe (ctx, snap) {
+  const configPools = ctx.thingConf.pools
+  const minerPools = snap.config.pool_config
+  const id = ctx.id
+  const ip = snap.config.network_config.ip_address
+  if (configPools.length > 0 && minerPools.length > 0) {
+    return (
+      !isCorrectPoolUsername(id, minerPools, configPools) &&
+      !isIpPoolUsername(ip, minerPools, configPools)
+    )
+  }
+  return false
+}
+
+function ipWorkerNameProbe (ctx, snap) {
+  const configPools = ctx.thingConf.pools
+  const minerPools = snap.config.pool_config
+  const ip = snap.config.network_config.ip_address
+
+  if (configPools.length > 0 && minerPools.length > 0) {
+    return isIpPoolUsername(ip, minerPools, configPools)
+  }
+  return false
+}
+
 libAlerts.specs.miner_default = {
   ...libAlerts.specs.default,
   wrong_miner_pool: {
     valid: (ctx, snap) => {
       return isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      return !areMinerPoolsUrlsCorrectlySetup(minerPools, configPools)
-    }
+    probe: wrongMinerPoolProbe
   },
   wrong_miner_subaccount: {
     valid: (ctx, snap) => {
       return isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return !isConfigWorkerNameInPoolUsername(minerPools, configPools)
-      }
-      return false
-    }
+    probe: wrongMinerSubaccountProbe
   },
   wrong_worker_name: {
     valid: (ctx, snap) => {
       return isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      const id = ctx.id
-      const ip = snap.config.network_config.ip_address
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return (
-          !isCorrectPoolUsername(id, minerPools, configPools) &&
-          !isIpPoolUsername(ip, minerPools, configPools)
-        )
-      }
-      return false
-    }
+    probe: wrongWorkerNameProbe
   },
   ip_worker_name: {
     valid: (ctx, snap) => {
       return isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      const ip = snap.config.network_config.ip_address
-
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return isIpPoolUsername(ip, minerPools, configPools)
-      }
-      return false
-    }
+    probe: ipWorkerNameProbe
   },
   'custom.low_hashrate.warning': {
     valid: (ctx, snap) => {
@@ -143,11 +151,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      return !areMinerPoolsUrlsCorrectlySetup(minerPools, configPools)
-    }
+    probe: wrongMinerPoolProbe
   },
   'custom.wrong_miner_pool.critical': {
     valid: (ctx, snap) => {
@@ -156,11 +160,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      return !areMinerPoolsUrlsCorrectlySetup(minerPools, configPools)
-    }
+    probe: wrongMinerPoolProbe
   },
   'custom.wrong_miner_subaccount.warning': {
     valid: (ctx, snap) => {
@@ -169,14 +169,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return !isConfigWorkerNameInPoolUsername(minerPools, configPools)
-      }
-      return false
-    }
+    probe: wrongMinerSubaccountProbe
   },
   'custom.wrong_miner_subaccount.critical': {
     valid: (ctx, snap) => {
@@ -185,14 +178,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return !isConfigWorkerNameInPoolUsername(minerPools, configPools)
-      }
-      return false
-    }
+    probe: wrongMinerSubaccountProbe
   },
   'custom.wrong_worker_name.warning': {
     valid: (ctx, snap) => {
@@ -201,19 +187,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      const id = ctx.id
-      const ip = snap.config.network_config.ip_address
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return (
-          !isCorrectPoolUsername(id, minerPools, configPools) &&
-          !isIpPoolUsername(ip, minerPools, configPools)
-        )
-      }
-      return false
-    }
+    probe: wrongWorkerNameProbe
   },
   'custom.wrong_worker_name.critical': {
     valid: (ctx, snap) => {
@@ -222,19 +196,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      const id = ctx.id
-      const ip = snap.config.network_config.ip_address
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return (
-          !isCorrectPoolUsername(id, minerPools, configPools) &&
-          !isIpPoolUsername(ip, minerPools, configPools)
-        )
-      }
-      return false
-    }
+    probe: wrongWorkerNameProbe
   },
   'custom.ip_worker_name.warning': {
     valid: (ctx, snap) => {
@@ -243,16 +205,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      const ip = snap.config.network_config.ip_address
-
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return isIpPoolUsername(ip, minerPools, configPools)
-      }
-      return false
-    }
+    probe: ipWorkerNameProbe
   },
   'custom.ip_worker_name.critical': {
     valid: (ctx, snap) => {
@@ -261,16 +214,7 @@ libAlerts.specs.miner_default = {
 
       return enabled && isValidPoolConfigSnap(ctx, snap)
     },
-    probe: (ctx, snap) => {
-      const configPools = ctx.thingConf.pools
-      const minerPools = snap.config.pool_config
-      const ip = snap.config.network_config.ip_address
-
-      if (configPools.length > 0 && minerPools.length > 0) {
-        return isIpPoolUsername(ip, minerPools, configPools)
-      }
-      return false
-    }
+    probe: ipWorkerNameProbe
   }
 }
 
