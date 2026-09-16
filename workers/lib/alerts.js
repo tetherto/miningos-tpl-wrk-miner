@@ -3,6 +3,31 @@
 const libAlerts = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/alerts')
 const libUtils = require('@tetherto/miningos-tpl-wrk-thing/workers/lib/utils')
 
+const MIN_30_MS = 30 * 60 * 1000
+
+// Tracks, per miner id, the wall-clock time at which hashrate_mhs.avg was last
+// seen to go from 0/absent to > 0. Reset to untracked whenever hashrate drops
+// back to 0/absent, so a dip restarts the warm-up clock. Keyed by ctx.id
+// (not a bare module-level scalar) because a single worker process evaluates
+// alerts for many miners concurrently, and ctx itself is rebuilt fresh every
+// poll cycle so it can't hold state across calls. Shared here (rather than
+// duplicated per vendor) so any miner_default spec, and any vendor layering on
+// top of it, can gate on the same clock.
+const miningStartedAt = new Map()
+
+const timeSinceMiningMs = (ctx, snap) => {
+  const now = snap?.stats?.timestamp ?? Date.now()
+  const hashrate = snap?.stats?.hashrate_mhs?.avg
+  if (!(hashrate > 0)) {
+    miningStartedAt.delete(ctx.id)
+    return 0
+  }
+  if (!miningStartedAt.has(ctx.id)) {
+    miningStartedAt.set(ctx.id, now)
+  }
+  return now - miningStartedAt.get(ctx.id)
+}
+
 function isValidPoolConfigSnap (ctx, snap) {
   return (
     libUtils.isValidSnap(snap) &&
@@ -114,8 +139,9 @@ libAlerts.specs.miner_default = {
     valid: (ctx, snap) => {
       const configuredParams = ctx.configuredParams['custom.low_hashrate.warning']
       const enabled = configuredParams?.enabled
+      const miningMs = timeSinceMiningMs(ctx, snap)
 
-      return enabled && isValidPoolConfigSnap(ctx, snap)
+      return enabled && isValidPoolConfigSnap(ctx, snap) && miningMs > MIN_30_MS
     },
     probe: (ctx, snap) => {
       const configuredParams = ctx.configuredParams['custom.low_hashrate.warning']
@@ -127,8 +153,9 @@ libAlerts.specs.miner_default = {
     valid: (ctx, snap) => {
       const configuredParams = ctx.configuredParams['custom.low_hashrate.critical']
       const enabled = configuredParams?.enabled
+      const miningMs = timeSinceMiningMs(ctx, snap)
 
-      return enabled && isValidPoolConfigSnap(ctx, snap)
+      return enabled && isValidPoolConfigSnap(ctx, snap) && miningMs > MIN_30_MS
     },
     probe: (ctx, snap) => {
       const configuredParams = ctx.configuredParams['custom.low_hashrate.critical']
@@ -273,5 +300,7 @@ libAlerts.specs.miner_default = {
     }
   }
 }
+
+libAlerts.timeSinceMiningMs = timeSinceMiningMs
 
 module.exports = libAlerts

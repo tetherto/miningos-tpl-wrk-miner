@@ -6,10 +6,12 @@ const crypto = require('crypto')
 
 const getRandomIP = () => [...crypto.randomBytes(4)].join('.')
 
+const MIN_30_MS = 30 * 60 * 1000
+
 // Helper function to create mock context
-const createMockContext = (thingConf = {}, configuredParams = {}) => {
+const createMockContext = (thingConf = {}, configuredParams = {}, id = 'test-miner-123') => {
   return {
-    id: 'test-miner-123',
+    id,
     thingConf: {
       pools: [
         { url: 'stratum+tcp://pool1.example.com:4444', worker_name: 'worker1' },
@@ -244,7 +246,7 @@ test('edge cases - missing network config', (t) => {
 
 for (const key of ['custom.low_hashrate.warning', 'custom.low_hashrate.critical']) {
   test(`${key} alert - valid is false when not enabled`, (t) => {
-    const ctx = createMockContext({}, { [key]: { enabled: false, minHashRateMhs: 100 } })
+    const ctx = createMockContext({}, { [key]: { enabled: false, minHashRateMhs: 100 } }, key)
     const snap = createMockSnap()
 
     const alertSpec = libAlerts.specs.miner_default[key]
@@ -252,23 +254,30 @@ for (const key of ['custom.low_hashrate.warning', 'custom.low_hashrate.critical'
   })
 
   test(`${key} alert - valid is false when configuredParams is missing`, (t) => {
-    const ctx = createMockContext()
+    const ctx = createMockContext({}, {}, key)
     const snap = createMockSnap()
 
     const alertSpec = libAlerts.specs.miner_default[key]
     t.not(alertSpec.valid(ctx, snap), 'Should not be valid when configuredParams is missing entirely')
   })
 
-  test(`${key} alert - valid is true when enabled and snap is a valid pool config snap`, (t) => {
-    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
-    const snap = createMockSnap()
-
+  test(`${key} alert - valid becomes true once mining has run for 30 min`, (t) => {
+    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } }, key)
     const alertSpec = libAlerts.specs.miner_default[key]
-    t.ok(alertSpec.valid(ctx, snap), 'Should be valid when enabled and pool config snap is valid')
+    const t0 = Date.now()
+
+    const justStarted = createMockSnap({}, { timestamp: t0, hashrate_mhs: { avg: 150 } })
+    t.not(alertSpec.valid(ctx, justStarted), 'Should not be valid the moment hashrate first appears')
+
+    const stillEarly = createMockSnap({}, { timestamp: t0 + MIN_30_MS - 1, hashrate_mhs: { avg: 150 } })
+    t.not(alertSpec.valid(ctx, stillEarly), 'Should not be valid before 30 min of mining')
+
+    const base = createMockSnap({}, { timestamp: t0 + MIN_30_MS + 1, hashrate_mhs: { avg: 150 } })
+    t.ok(alertSpec.valid(ctx, base), 'Should be valid once enabled, pool config is valid, and mining > 30 min')
   })
 
   test(`${key} alert - valid is false when enabled but miner is offline`, (t) => {
-    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } })
+    const ctx = createMockContext({}, { [key]: { enabled: true, minHashRateMhs: 100 } }, key)
     const snap = createMockSnap({}, { status: 'offline' })
 
     const alertSpec = libAlerts.specs.miner_default[key]
