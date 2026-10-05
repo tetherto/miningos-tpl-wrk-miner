@@ -48,9 +48,11 @@ class WrkMinerRack extends WrkRack {
   async _queryThingHook (req, res) {
     if (req.method === 'setupPools' && res?.success) {
       const thg = this.mem.things[req.id]
-      const configId = thg.ctrl.poolConfig
-      if (thg && configId && thg.info.poolConfig !== configId) {
-        thg.info.poolConfig = configId
+      const { poolConfig, poolUrls } = thg.ctrl
+      const configChanged = poolConfig && thg.info.poolConfig !== poolConfig
+      if (configChanged || String(thg.info.poolUrls) !== String(poolUrls)) {
+        if (poolConfig) thg.info.poolConfig = poolConfig
+        thg.info.poolUrls = poolUrls
         await this.saveThingData(thg)
       }
     }

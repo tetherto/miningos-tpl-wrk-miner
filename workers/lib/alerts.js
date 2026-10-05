@@ -73,14 +73,13 @@ function isConfigWorkerNameInPoolUsername (minerPools, confPools) {
   return true
 }
 
-function areMinerPoolsUrlsCorrectlySetup (minerPools, confPools) {
-  return minerPools?.length && confPools?.length
+function areMinerPoolsUrlsCorrectlySetup (minerPools, urls) {
+  return urls.every((url, i) => minerPools[i]?.url === url)
 }
 
 function wrongMinerPoolProbe (ctx, snap) {
-  const configPools = ctx.thingConf.pools
-  const minerPools = snap.config.pool_config
-  return !areMinerPoolsUrlsCorrectlySetup(minerPools, configPools)
+  const urls = ctx.info?.poolUrls ?? (ctx.info?.poolConfig ? null : ctx.thingConf.pools.map(p => p.url))
+  return !!urls && !areMinerPoolsUrlsCorrectlySetup(snap.config.pool_config, urls)
 }
 
 function wrongMinerSubaccountProbe (ctx, snap) {

@@ -771,6 +771,17 @@ test('_queryThingHook does not save when poolConfig is unchanged', async (t) => 
   t.is(saved, false)
 })
 
+test('_queryThingHook records the pushed pool urls and saves when they change', async (t) => {
+  let saved = 0
+  const thg = { id: 'thg1', ctrl: { poolConfig: null, poolUrls: ['stratum+tcp://a:1'] }, info: {} }
+  const ctx = makeWrkCtx({ things: { thg1: thg } })
+  ctx.saveThingData = async () => { saved++ }
+  await ctx._queryThingHook({ method: 'setupPools', id: 'thg1' }, { success: true })
+  await ctx._queryThingHook({ method: 'setupPools', id: 'thg1' }, { success: true })
+  t.alike(thg.info, { poolUrls: ['stratum+tcp://a:1'] })
+  t.is(saved, 1)
+})
+
 // ---------------------------------------------------------------------------
 // collectSnapsHook0
 // ---------------------------------------------------------------------------

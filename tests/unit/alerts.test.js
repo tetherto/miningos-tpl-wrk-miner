@@ -104,6 +104,35 @@ test('wrong_miner_pool alert - incorrectly configured pools', (t) => {
   t.ok(alertSpec.probe(ctx, snap), 'Should trigger alert for incorrectly configured pools')
 })
 
+test('wrong_miner_pool alert - triggers when a pool url differs', (t) => {
+  const ctx = createMockContext()
+  const snap = createMockSnap({
+    pool_config: [
+      { url: 'stratum+tcp://attacker.example.com:3333', username: 'worker1.test-miner-123' },
+      { url: 'stratum+tcp://pool2.example.com:4444', username: 'worker2.test-miner-123' }
+    ]
+  })
+
+  const md = libAlerts.specs.miner_default
+  t.ok(md.wrong_miner_pool.valid(ctx, snap))
+  t.ok(md.wrong_miner_pool.probe(ctx, snap))
+})
+
+test('wrong_miner_pool alert - compares against the pools last pushed to the miner', (t) => {
+  const ctx = { ...createMockContext(), info: { poolConfig: 'cfg-1', poolUrls: ['stratum+tcp://pm.example.com:3333'] } }
+  const probe = libAlerts.specs.miner_default.wrong_miner_pool.probe
+
+  t.not(probe(ctx, createMockSnap({ pool_config: [{ url: 'stratum+tcp://pm.example.com:3333', username: 'u1' }] })))
+  t.ok(probe(ctx, createMockSnap()))
+})
+
+test('wrong_miner_pool alert - skips a pool manager miner with no recorded pool urls', (t) => {
+  const ctx = { ...createMockContext(), info: { poolConfig: 'cfg-1' } }
+  const snap = createMockSnap({ pool_config: [{ url: 'stratum+tcp://other.example.com:3333', username: 'u1' }] })
+
+  t.not(libAlerts.specs.miner_default.wrong_miner_pool.probe(ctx, snap))
+})
+
 test('wrong_miner_subaccount alert - correct worker names', (t) => {
   const ctx = createMockContext()
   const snap = createMockSnap()

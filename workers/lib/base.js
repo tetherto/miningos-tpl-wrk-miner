@@ -121,6 +121,7 @@ class BaseMiner extends BaseThing {
       }
 
       this.poolConfig = configId || null
+      this.poolUrls = poolsToUse.map(p => p.url)
       return { success: true }
     } catch (e) {
       return { success: false, error_msg: e.message }

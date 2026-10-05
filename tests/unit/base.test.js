@@ -262,6 +262,7 @@ test('setupPools with params.config calls _transformPoolConfig and sets poolConf
   t.is(JSON.stringify(result), JSON.stringify({ success: true }))
   t.is(miner.poolConfig, 'cfg-42')
   t.is(usedPools[0].url, 'stratum+tcp://pool1.com:4444')
+  t.alike(miner.poolUrls, ['stratum+tcp://pool1.com:4444'])
 })
 
 test('setupPools propagates an in-band driver rejection', async (t) => {
